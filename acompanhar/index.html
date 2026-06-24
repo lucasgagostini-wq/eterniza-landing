@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Acompanhe sua Homenagem — Eterniza</title>
+  <meta name="description" content="Acompanhe o status da sua homenagem em vídeo da Eterniza." />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#120f0d" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#120f0d; --field:#1a1512;
+      --card:rgba(36,30,25,.72); --card-line:rgba(216,180,120,.16);
+      --gold:#d8b478; --gold-soft:#e7cfa3; --gold-bright:#fff3d6; --cream:#f4ede2;
+      --text:#e9e0d3; --muted:#a99d8c; --muted2:#7d7367; --line:#352d26;
+      --green:#6cc081; --green-soft:#c2e7c9; --green-deep:#3f7a52;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    *{scrollbar-width:none}::-webkit-scrollbar{width:0;height:0;display:none}
+    body{
+      font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);
+      line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100dvh;position:relative;overflow-x:hidden;
+    }
+    /* ===== textura viva de fundo: aura dourada driftando + grão ===== */
+    body::before{
+      content:'';position:fixed;inset:-25%;z-index:-2;pointer-events:none;
+      background:
+        radial-gradient(38% 30% at 18% 12%, rgba(216,180,120,.13), transparent 60%),
+        radial-gradient(42% 34% at 86% 22%, rgba(231,207,163,.08), transparent 60%),
+        radial-gradient(55% 45% at 50% 108%, rgba(216,180,120,.10), transparent 62%);
+      animation:aura 24s ease-in-out infinite alternate;
+    }
+    body::after{
+      content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.045;mix-blend-mode:overlay;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+    @keyframes aura{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-2%,-4%,0) scale(1.1)}}
+
+    .wrap{max-width:540px;margin:0 auto;padding:0 22px;position:relative}
+    header{padding:30px 0 6px;text-align:center}
+    .brand{
+      font-family:'Playfair Display',serif;font-weight:800;font-size:24px;letter-spacing:.5px;
+      background:linear-gradient(100deg,var(--gold) 22%,var(--gold-bright) 47%,#fffdf7 52%,var(--gold) 80%);
+      background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+      animation:shine 5s linear infinite;display:inline-block;
+    }
+    @keyframes shine{0%{background-position:180% 0}100%{background-position:-80% 0}}
+    .brand-sub{font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted2);margin-top:7px}
+
+    /* ===== estado: busca ===== */
+    .lupa{width:64px;height:64px;margin:40px auto 20px;border-radius:50%;display:grid;place-items:center;
+      background:radial-gradient(circle at 50% 32%,rgba(216,180,120,.26),rgba(216,180,120,.04));
+      border:1px solid rgba(216,180,120,.4);box-shadow:0 0 34px -8px rgba(216,180,120,.35),inset 0 1px 0 rgba(255,243,214,.15)}
+    .lupa svg{width:27px;height:27px;stroke:var(--gold-soft)}
+    h1{font-family:'Playfair Display',serif;font-weight:700;font-size:29px;color:var(--cream);text-align:center;margin-bottom:9px;letter-spacing:.2px;text-wrap:balance}
+    .sub{text-align:center;color:var(--muted);font-size:15px;max-width:390px;margin:0 auto 26px;text-wrap:pretty}
+    .sub b{color:var(--gold-soft);font-weight:600}
+
+    .box,.pedido{
+      background:var(--card);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      border:1px solid var(--card-line);border-radius:20px;
+      box-shadow:0 26px 54px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,243,214,.06);
+    }
+    .box{padding:24px 22px}
+    label{display:block;font-size:12.5px;font-weight:600;color:var(--gold-soft);margin-bottom:9px;letter-spacing:.02em}
+    input{width:100%;background:var(--field);border:1px solid var(--line);border-radius:13px;padding:15px 16px;color:var(--cream);font-size:16px;outline:none;transition:border-color .18s,box-shadow .18s}
+    input::placeholder{color:#6c6356}
+    input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(216,180,120,.16)}
+    .btn{width:100%;margin-top:15px;background:linear-gradient(180deg,#e8c993,#d3ab6c);color:#1a1410;font-weight:700;font-size:16px;border:none;border-radius:13px;padding:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 12px 28px -12px rgba(216,180,120,.6);transition:filter .15s,transform .1s,box-shadow .15s}
+    .btn:hover{filter:brightness(1.06);box-shadow:0 16px 32px -12px rgba(216,180,120,.7)}
+    .btn:active{transform:scale(.985)}
+    .btn:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+    .btn[disabled]{opacity:.6;cursor:default}
+    .seguro{text-align:center;color:var(--muted2);font-size:13px;margin-top:20px}
+    .erro{color:#e7a17a;font-size:14px;text-align:center;margin-top:14px;min-height:18px}
+
+    /* ===== estado: painel ===== */
+    .pedido{padding:24px 22px;margin-bottom:16px;animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+    @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    .thanks{display:flex;align-items:center;justify-content:center;gap:7px;text-align:center;color:var(--gold-soft);font-size:13px;font-weight:600;letter-spacing:.01em;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+    .p-nome{font-family:'Playfair Display',serif;font-weight:700;font-size:23px;color:var(--cream);text-align:center;text-wrap:balance}
+    .p-data{text-align:center;color:var(--muted2);font-size:12.5px;margin-bottom:24px;font-variant-numeric:tabular-nums}
+
+    /* ===== timeline ===== */
+    .timeline{display:flex;flex-direction:column;margin:4px 2px}
+    .step{display:flex;align-items:flex-start;gap:15px;position:relative}
+    .step .dot{flex:0 0 28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;z-index:1;
+      border:2px solid var(--line);background:var(--field);color:var(--muted2);transition:all .3s}
+    .step .line{position:absolute;left:13px;top:28px;width:2px;height:calc(100% - 6px);background:var(--line);transition:background .3s}
+    .step:last-child .line{display:none}
+    .step .lbl{padding-bottom:24px;font-size:15px;color:var(--muted);font-weight:500;line-height:1.45;display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-height:28px}
+    /* concluído */
+    .step.done .dot{background:#18241b;border-color:var(--green);color:var(--green)}
+    .step.done .line{background:linear-gradient(var(--green),var(--green))}
+    .step.done .lbl{color:var(--cream)}
+    /* em andamento */
+    .step.active .dot{background:#282014;border-color:var(--gold);color:var(--gold);
+      box-shadow:0 0 0 0 rgba(216,180,120,.45);animation:pulse 1.8s ease-in-out infinite}
+    .step.active .lbl{color:var(--gold-soft);font-weight:700}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(216,180,120,.45)}50%{box-shadow:0 0 0 7px rgba(216,180,120,0)}}
+    .tag{font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:99px}
+    .tag.andamento{color:var(--gold);background:rgba(216,180,120,.14);border:1px solid rgba(216,180,120,.3)}
+    .tag.ok{color:var(--green-soft);background:rgba(108,192,129,.15);border:1px solid rgba(108,192,129,.35)}
+
+    /* ===== banners ===== */
+    .ready{margin-top:18px;background:linear-gradient(180deg,rgba(108,192,129,.15),rgba(108,192,129,.04));border:1px solid rgba(108,192,129,.4);border-radius:15px;padding:18px 16px;text-align:center}
+    .ready .ico{font-size:24px}
+    .ready b{display:block;color:var(--green-soft);font-size:15.5px;margin-top:4px}
+    .ready p{font-size:14px;color:var(--text);margin-top:5px;text-wrap:pretty}
+    .pend{margin-top:10px;background:linear-gradient(180deg,rgba(216,180,120,.13),rgba(216,180,120,.03));border:1px solid rgba(216,180,120,.34);border-radius:15px;padding:18px 16px;text-align:center}
+    .pend .ico{font-size:23px}
+    .pend b{display:block;color:var(--gold-soft);font-size:15px;margin-top:4px}
+    .pend p{font-size:14px;color:var(--text);margin-top:5px;text-wrap:pretty}
+
+    /* ===== ações ===== */
+    .actions{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+    .act{display:inline-flex;align-items:center;justify-content:center;gap:9px;text-decoration:none;font-weight:700;font-size:15px;padding:14px 20px;border-radius:13px;transition:filter .15s,transform .1s;cursor:pointer;border:none}
+    .act:active{transform:scale(.985)}
+    .act svg{width:19px;height:19px;flex:0 0 auto}
+    .act-wpp{background:#1faa55;color:#fff;box-shadow:0 12px 26px -14px rgba(31,170,85,.8)}
+    .act-wpp:hover{filter:brightness(1.07)}
+    .act-watch{background:linear-gradient(180deg,#e8c993,#d3ab6c);color:#1a1410;box-shadow:0 12px 26px -14px rgba(216,180,120,.7)}
+    .act-watch:hover{filter:brightness(1.06)}
+
+    .help{display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 0 36px;color:var(--muted);font-size:13.5px}
+    .help a{color:var(--green-soft);font-weight:600;text-decoration:none;border-bottom:1px solid rgba(194,231,201,.3)}
+    .help a:hover{color:#fff}
+    .voltar{display:inline-flex;align-items:center;gap:5px;color:var(--gold-soft);font-size:13.5px;font-weight:500;margin:2px 0 14px;cursor:pointer;text-decoration:none;transition:color .15s}
+    .voltar:hover{color:var(--gold-bright)}
+    footer{text-align:center;color:var(--muted2);font-size:12px;padding:22px 0 38px;opacity:.8}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+    @media (prefers-reduced-motion:reduce){
+      body::before{animation:none}.brand{animation:none}.step.active .dot{animation:none}.pedido{animation:none}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Eterniza</div>
+    <div class="brand-sub">homenagem em vídeo</div>
+  </header>
+  <main class="wrap">
+
+    <!-- ESTADO 1: BUSCA -->
+    <section id="busca">
+      <div class="lupa" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+      <h1>Acompanhe sua homenagem</h1>
+      <p class="sub">Digite o <b>e-mail</b> ou <b>WhatsApp</b> que você usou na compra.</p>
+      <div class="box">
+        <form id="form">
+          <label for="contato">E-mail ou WhatsApp</label>
+          <input id="contato" type="text" inputmode="email" placeholder="(11) 99999-9999" autocomplete="off" />
+          <button class="btn" type="submit" id="btnBuscar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1410" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            Ver status do pedido
+          </button>
+        </form>
+        <div class="erro" id="erro" role="alert"></div>
+      </div>
+      <div class="seguro">🔒 Seus dados estão seguros conosco.</div>
+    </section>
+
+    <!-- ESTADO 2: PAINEL -->
+    <section id="painel" hidden>
+      <a class="voltar" id="voltar">← Consultar outro número</a>
+      <div id="lista"></div>
+      <div class="help">Precisa de ajuda? <a id="helpWpp" href="#" target="_blank" rel="noopener">Falar no WhatsApp</a></div>
+    </section>
+
+  </main>
+  <footer>Eterniza · Transformando lembranças em emoções reais.</footer>
+
+  <script>
+    const STEPS = [
+      { key:'pago',        label:'Pagamento confirmado' },
+      { key:'fila_edicao', label:'Na fila de edição' },
+      { key:'produzindo',  label:'Produzindo o vídeo' },
+      { key:'pronta',      label:'Homenagem pronta' },
+      { key:'entregue',    label:'Entregue no WhatsApp' },
+    ];
+    const PAGOS = ['pago','fila_edicao','produzindo','pronta','entregue'];
+    const WPP_NUM = '5519990097606'; // contato Eterniza
+    const fmtData = (iso) => { try { return new Date(iso).toLocaleDateString('pt-BR'); } catch(e){ return ''; } };
+    const esc = (s) => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const waContato = (nome) => 'https://wa.me/' + WPP_NUM + '?text=' + encodeURIComponent('Olá! 💛 Tenho uma dúvida sobre a homenagem' + (nome ? ' de ' + nome : '') + ' (Eterniza).');
+    const ICON_WPP = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.06 24l1.68-6.13A11.86 11.86 0 0 1 .16 11.9C.16 5.34 5.5.02 12.06.02a11.82 11.82 0 0 1 8.4 3.49 11.76 11.76 0 0 1 3.48 8.4c0 6.55-5.34 11.88-11.9 11.88a11.9 11.9 0 0 1-5.68-1.45L.06 24zM6.6 20.2c1.67.99 3.27 1.58 5.45 1.58 5.45 0 9.9-4.43 9.9-9.87 0-5.45-4.42-9.88-9.88-9.88S2.2 6.45 2.2 11.9c0 2.3.67 4.02 1.8 5.82l-.99 3.62 3.6-.94zm10.96-5.46c-.07-.12-.27-.2-.57-.35-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.5 0 1.47 1.07 2.89 1.22 3.09.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2-1.41.25-.7.25-1.29.17-1.42z"/></svg>';
+    const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+
+    function renderTimeline(status){
+      const idx = Math.max(0, STEPS.findIndex(s => s.key === status));
+      const finished = (status === 'entregue'); // estado final: tudo concluído
+      return STEPS.map((s,i)=>{
+        const done = finished || i < idx;
+        const active = !finished && i === idx;
+        const cls = done ? 'done' : (active ? 'active' : '');
+        const dot = done ? '✓' : '';
+        let tag = '';
+        if (active) tag = ' <span class="tag andamento">em andamento</span>';
+        else if (finished && i === STEPS.length - 1) tag = ' <span class="tag ok">concluído</span>';
+        return `<div class="step ${cls}"><div class="line"></div><div class="dot">${dot}</div><div class="lbl">${s.label}${tag}</div></div>`;
+      }).join('');
+    }
+
+    function renderPedido(p){
+      const nome = esc(p.nome || 'seu ente querido');
+      const wa = waContato(p.nome || '');
+      // antes do pagamento: sem esteira de produção
+      if (!PAGOS.includes(p.status)){
+        return `<div class="pedido">
+          <div class="p-nome">Homenagem de ${nome}</div>
+          <div class="p-data">${p.created_at ? 'Solicitada em ' + fmtData(p.created_at) : ''}</div>
+          <div class="pend">
+            <div class="ico">⏳</div>
+            <b>Aguardando confirmação do pagamento</b>
+            <p>Assim que seu pagamento for confirmado, a homenagem de ${nome} entra na fila e você acompanha tudo por aqui.</p>
+          </div>
+        </div>`;
+      }
+      const entregue = (p.status === 'entregue');
+      const ready = (p.status === 'pronta' || entregue);
+      let readyBox = '';
+      if (ready){
+        const watchBtn = p.video_url ? `<a class="act act-watch" href="${esc(p.video_url)}" target="_blank" rel="noopener">${ICON_PLAY} Assistir à homenagem</a>` : '';
+        readyBox = `
+        <div class="ready">
+          <div class="ico">🕊️</div>
+          <b>Sua homenagem está ${entregue ? 'entregue' : 'pronta'}</b>
+          <p>${entregue ? 'Ela foi enviada no seu WhatsApp.' : 'Você vai recebê-la no seu WhatsApp em instantes.'} Qualquer dúvida, é só chamar a gente. 💛</p>
+          ${watchBtn ? `<div class="actions">${watchBtn}</div>` : ''}
+        </div>`;
+      }
+      return `<div class="pedido">
+        <div class="thanks">💛 Obrigado! Recebemos seu pedido com todo carinho.</div>
+        <div class="p-nome">Homenagem de ${nome}</div>
+        <div class="p-data">${p.created_at ? 'Pedido em ' + fmtData(p.created_at) : ''}</div>
+        <div class="timeline">${renderTimeline(p.status)}</div>
+        ${readyBox}
+      </div>`;
+    }
+
+    const $ = (id) => document.getElementById(id);
+    $('helpWpp').href = waContato('');
+    $('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const contato = $('contato').value.trim();
+      $('erro').textContent = '';
+      if (!contato || contato.length < 5) { $('erro').textContent = 'Digite o e-mail ou WhatsApp da compra.'; return; }
+      const btn = $('btnBuscar');
+      btn.disabled = true; btn.textContent = 'Buscando…';
+      try {
+        const r = await fetch('/api/status?contato=' + encodeURIComponent(contato));
+        const data = await r.json();
+        const pedidos = (data && data.pedidos) || [];
+        if (!pedidos.length) {
+          $('erro').textContent = 'Nenhum pedido encontrado com esse contato. Confira o número/e-mail usado na compra.';
+        } else {
+          $('lista').innerHTML = pedidos.map(renderPedido).join('');
+          $('helpWpp').href = waContato(pedidos[0] && pedidos[0].nome ? pedidos[0].nome : '');
+          $('busca').hidden = true; $('painel').hidden = false;
+          window.scrollTo(0,0);
+        }
+      } catch (err) {
+        $('erro').textContent = 'Tivemos um problema ao buscar. Tente de novo em instantes.';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1410" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg> Ver status do pedido';
+      }
+    });
+    $('voltar').addEventListener('click', () => { $('painel').hidden = true; $('busca').hidden = false; $('contato').value=''; });
+
+    // pré-preenche se vier ?contato= / ?phone= do Cakto (redirect pós-pagamento)
+    (function(){
+      const q = new URLSearchParams(location.search);
+      const pre = q.get('contato') || q.get('phone') || q.get('whatsapp') || q.get('email');
+      if (pre) { $('contato').value = pre; $('form').dispatchEvent(new Event('submit')); }
+    })();
+  </script>
+</body>
+</html>

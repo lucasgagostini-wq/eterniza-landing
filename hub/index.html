@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Delivery Hub — Eterniza</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+  <!-- PWA / adicionar à tela inicial -->
+  <link rel="manifest" href="/hub/manifest.json" />
+  <meta name="theme-color" content="#090909" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Eterniza" />
+  <link rel="apple-touch-icon" href="/hub/apple-touch-icon.png" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#090909;--surface:#111;--surface-raised:#191919;--surface-high:#222;
+      --line:rgba(255,255,255,.07);--line-strong:rgba(255,255,255,.12);--line-hard:#2a2a2a;--line-soft:#1f1f1f;
+      --fg:#f0f0f0;--fg2:#d4d4d4;--muted:#7a7a7a;--muted2:#555;
+      --accent:#22c55e;--accent-hover:#16a34a;--accent-soft:rgba(34,197,94,.1);--accent-border:rgba(34,197,94,.3);--accent-ink:#04130a;--accent-lt:#86efac;
+      --danger:#f87171;--danger-soft:rgba(248,113,113,.1);--warning:#fbbf24;
+      --gold:#d8b478;--gold-soft:#e7cfa3;--gold-bright:#fff3d6;
+      --mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'Space Grotesk',system-ui,sans-serif;--serif:'Playfair Display',serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{min-height:100dvh;background:
+      radial-gradient(ellipse 90% 55% at 50% -10%,rgba(34,197,94,.06),transparent),
+      radial-gradient(ellipse 60% 45% at 92% 96%,rgba(216,180,120,.045),transparent),
+      var(--bg)}
+    body{font-family:var(--sans);color:var(--fg);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100dvh}
+    .grid-texture{background-color:#0a0a0a;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:32px 32px}
+    ::selection{background:rgba(34,197,94,.22);color:#fff}
+    .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+    .scrollbar-hide{scrollbar-width:none}.scrollbar-hide::-webkit-scrollbar{display:none}
+    /* scroll funciona, barra invisível em tudo (pedido do Lucas) */
+    *{scrollbar-width:none;-ms-overflow-style:none}::-webkit-scrollbar{width:0;height:0;display:none}
+    a{color:inherit;text-decoration:none}
+    button,input,textarea,select{font:inherit}
+    input,textarea,select{width:100%;background:#0f0f0f;border:1px solid var(--line-hard);border-radius:10px;padding:10px 12px;color:var(--fg);font-size:14px;outline:none}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+    textarea{resize:vertical;line-height:1.55}
+
+    .live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:pulse 2s infinite;flex-shrink:0}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.45)}70%{box-shadow:0 0 0 6px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+    @keyframes feedin{from{opacity:0;transform:translateY(-7px) scale(.985)}to{opacity:1;transform:none}}
+    @keyframes detailin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion:reduce){.live-dot{animation:none}.feed-card,.section{animation:none}}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;font-weight:600;font-size:13px;padding:9px 13px;cursor:pointer;border:1px solid var(--line-hard);background:var(--surface-raised);color:var(--fg2);transition:filter .15s,transform .07s,border-color .15s}
+    .btn:hover{filter:brightness(1.18)}.btn:active{transform:scale(.98)}
+    .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+    .btn.ghost{background:transparent;color:var(--muted)}
+    .btn.danger{background:rgba(127,29,29,.4);color:#fca5a5;border-color:#7f1d1d}
+    .btn.gold{background:linear-gradient(180deg,#e4c389,#d3ab6c);color:#1a1410;border-color:transparent}
+    .btn.sm{padding:7px 10px;font-size:12px}
+    .btn:disabled{opacity:.4;cursor:not-allowed}
+    .wpp{display:inline-flex;align-items:center;gap:7px;background:#25a35a;color:#fff;font-weight:700;padding:10px 15px;border-radius:10px;font-size:13.5px;white-space:nowrap}
+    .wpp:hover{filter:brightness(1.08)}
+
+    .chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:99px}
+    .ov{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#666}
+
+    /* ===== LOGIN ===== */
+    #login{display:none;min-height:100dvh;place-items:center;padding:24px}
+    #login .box{width:100%;max-width:380px;text-align:center;background:rgba(17,17,17,.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line-strong);border-radius:18px;padding:30px 24px;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+    #login .brand{font-family:var(--sans);font-weight:700;font-size:22px;color:var(--gold-soft);margin:12px 0 2px;letter-spacing:.2px}
+    #login p{color:var(--muted);font-size:13.5px;margin-bottom:20px}
+    #login .erro{color:#e7a17a;font-size:13px;margin-top:10px;min-height:16px}
+
+    /* ===== SHELL ===== */
+    #app{display:none;flex-direction:column;height:100dvh;overflow:hidden}
+    .nav{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 18px;background:var(--surface);border-bottom:1px solid var(--line-soft)}
+    .nav .left{display:flex;align-items:center;gap:10px;min-width:0}
+    .nav .mark{flex-shrink:0}
+    .nav .title{font-family:var(--sans);font-weight:700;font-size:16px;color:var(--gold-soft);white-space:nowrap;letter-spacing:.2px;overflow:hidden;text-overflow:ellipsis}
+    .nav .sub{font-size:11px;color:var(--muted)}
+    .nav .right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .nav .who{font-size:11px;color:#666}
+
+    .body{flex:1;display:flex;overflow:hidden;min-height:0}
+    .feed{width:380px;min-width:380px;display:flex;flex-direction:column;overflow:hidden;background:#0e0e0e;border-right:1px solid var(--line-soft)}
+    .feed-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--line-soft)}
+    .feed-head .t{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#888}
+    .feed-head .lv{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--accent)}
+    .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line-soft)}
+    .filters .f{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:42px;padding:8px 11px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--line-hard);background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));color:#bcbcc2}
+    .filters .f.todos{grid-column:span 2}
+    .filters .f.on{background:linear-gradient(180deg,rgba(34,197,94,.18),rgba(34,197,94,.07));border-color:var(--accent-border);color:#f0fdf4}
+    .filters .f .c{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.05);color:#9a9a9a}
+    .filters .f.on .c{background:rgba(4,19,10,.4);color:var(--accent-lt)}
+    .feed-list{flex:1;overflow-y:auto;padding:8px 0}
+
+    .feed-card{margin:7px 12px;padding:12px 13px;border-radius:13px;cursor:pointer;background:#121212;border:1px solid #222;border-left:1px solid #222;animation:feedin .3s ease both}
+    .feed-card:hover{background:#161616}
+    .feed-card.sel{background:#161616;border-color:var(--accent-border);border-left:3px solid var(--accent)}
+    .feed-card .fc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+    .feed-card .nm{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .feed-card .dt{flex-shrink:0;font-size:10.5px;color:var(--muted2)}
+    .feed-card .for{margin:5px 0 8px;font-size:12px;color:#8a8a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .feed-card .for b{color:var(--gold-soft);font-weight:500}
+    .feed-card .tags{display:flex;flex-wrap:wrap;gap:5px}
+
+    .detail{flex:1;overflow-y:auto;min-width:0}
+    .detail-inner{padding:14px 22px 22px;max-width:920px;margin:0 auto}
+    .back{display:none;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);background:transparent;border:1px solid var(--line-hard);border-radius:9px;padding:7px 11px;cursor:pointer;margin-bottom:14px}
+
+    .d-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+    .d-head .htags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .d-head .acts{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end}
+    .d-buyer{font-size:18px;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+    .tagrole{font-size:12px;font-weight:400;color:var(--muted)}
+    .d-when{font-size:11px;color:var(--muted2);margin-top:6px}
+
+    .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px}
+    .section{background:var(--surface);border:1px solid var(--line-hard);border-radius:14px;overflow:hidden;animation:detailin .35s ease both;display:flex;flex-direction:column}
+    .section>.sh{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 15px;background:#0d0d0d;border-bottom:1px solid var(--line-soft)}
+    .section>.sh .st{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#888}
+    .section>.sb{padding:13px 15px}
+    .icon-btn{display:inline-flex;padding:6px;border-radius:8px;border:1px solid var(--line-hard);background:transparent;color:var(--muted2);cursor:pointer;font-size:13px}
+    .icon-btn:hover{filter:brightness(1.4);color:var(--accent)}
+
+    .photo{width:100%;aspect-ratio:1;max-width:150px;object-fit:cover;border-radius:12px;border:1px solid var(--line-hard);cursor:pointer;background:#0f0f0f}
+    .photo.ph{display:grid;place-items:center;color:#444;font-size:30px;cursor:default}
+    .recip{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--gold-soft);line-height:1.2}
+    .recip-rel{color:#9a9a9a;font-size:13px;margin-top:2px}
+    .memory{font-style:italic;color:var(--fg2);font-size:13px;line-height:1.6;margin-top:12px;padding:10px 13px;background:#0f0f0f;border-left:2px solid var(--gold);border-radius:0 8px 8px 0}
+
+    .kv{display:grid;grid-template-columns:1fr 1fr;gap:11px 16px}
+    .kv .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#666;margin-bottom:2px}
+    .kv .v{font-size:13.5px;color:var(--fg2);word-break:break-word}
+    .kv .v.empty{color:var(--muted2)}
+    .kv .v.cp{cursor:pointer}.kv .v.cp:hover{color:var(--accent-lt)}
+    .kvc{display:flex;flex-wrap:wrap;gap:10px 24px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft)}
+    .kvc .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#666;margin-bottom:1px}
+    .kvc .v{font-size:13.5px;color:var(--fg2);word-break:break-word}
+    .kvc .v.cp{cursor:pointer}.kvc .v.cp:hover{color:var(--accent-lt)}
+    .objv{font-size:13px;color:var(--fg2);line-height:1.5}
+
+    .flow{display:flex;gap:5px;flex-wrap:wrap}
+    .flow button{flex:1 1 auto;min-width:72px;font-size:11.5px;font-weight:600;padding:8px 6px;border-radius:9px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#9a9a9a}
+    .flow button:hover{border-color:var(--accent-border);color:var(--accent-lt)}
+    .flow button.done{border-color:rgba(34,197,94,.4);color:var(--accent-lt)}
+    .flow button.cur{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+
+    .alert{display:flex;gap:10px;align-items:flex-start;padding:9px 13px;border-radius:11px;font-size:13px;line-height:1.55}
+    .alert.warn{background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);color:#fdba74}
+    .alert.err{background:#2d0000;border:1px solid #7f1d1d;color:#fca5a5}
+    .msgbox{margin-top:11px}
+    .msgrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+    .pills .p{font-size:11.5px;padding:6px 11px;border-radius:9px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#9a9a9a}
+    .pills .p.on{border-color:rgba(34,197,94,.5);color:var(--accent-lt);background:var(--accent-soft)}
+
+    .stack>*+*{margin-top:11px}
+    .emptystate{display:grid;place-items:center;gap:10px;height:100%;min-height:300px;color:var(--muted2);text-align:center;padding:30px}
+    .emptystate .big{font-size:34px;opacity:.5}
+    .hint{display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:10px;font-size:13px;background:#0f0f0f;border:1px dashed var(--line-hard);color:#777}
+    .editgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+    .editgrid label{display:block}.editgrid .full{grid-column:span 2}
+    .editgrid .ov{margin-bottom:4px;display:block}
+
+    /* ===== FOOTER ===== */
+    .status{flex-shrink:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 18px;background:#0d0d0d;border-top:1px solid #1a1a1a;font-size:11.5px;color:#666}
+    .status .m{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+    .status .m:hover{color:#aaa}
+    .status .m b{color:#cfcfcf;font-weight:600}
+    .status .sep{color:#333}
+    .status .lv{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--accent)}
+
+    #toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%) translateY(14px);background:rgba(17,17,17,.97);backdrop-filter:blur(8px);border:1px solid var(--line-strong);color:var(--fg);padding:11px 18px;border-radius:11px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .25s;z-index:80;box-shadow:0 16px 40px rgba(0,0,0,.6);max-width:90vw;text-align:center}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    #toast.err{border-color:#7f1d1d;color:#fca5a5}#toast.ok{border-color:var(--accent-border);color:var(--accent-lt)}
+    #lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;place-items:center;z-index:90;cursor:zoom-out;padding:20px}
+    #lb img{max-width:100%;max-height:90vh;border-radius:12px}
+
+    /* busca de lead no feed (por número ou nome) */
+    .feed-search{position:relative;padding:8px 12px 4px;flex-shrink:0}
+    .feed-search input{padding:9px 32px 9px 12px;font-size:13px;border-radius:9px}
+    .feed-search input::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+    #feedSearchClear{position:absolute;right:19px;top:calc(50% + 2px);transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;padding:4px;display:none}
+    #feedSearchClear:hover{color:var(--fg)}
+    .feed-search.has #feedSearchClear{display:block}
+
+    /* ===== ANÁLISE · dashboard do funil ===== */
+    #analytics{position:fixed;inset:0;z-index:70;display:none;flex-direction:column;
+      background:
+        radial-gradient(ellipse 70% 55% at 12% -5%,rgba(34,197,94,.08),transparent 55%),
+        radial-gradient(ellipse 55% 50% at 100% 105%,rgba(216,180,120,.06),transparent 55%),
+        var(--bg)}
+    #analytics::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+      background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);
+      background-size:46px 46px;
+      -webkit-mask-image:radial-gradient(ellipse 95% 75% at 50% 30%,#000,transparent);mask-image:radial-gradient(ellipse 95% 75% at 50% 30%,#000,transparent)}
+    #analytics>*{position:relative;z-index:1}
+    .ana-head{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 20px;border-bottom:1px solid var(--line-soft);background:rgba(15,15,15,.66);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+    .ana-title{font-family:var(--sans);font-weight:700;font-size:16px;color:var(--gold-soft);letter-spacing:.2px}
+    .ana-periods{display:flex;gap:6px}
+    .ana-periods .p{font-size:12px;padding:6px 11px;border-radius:9px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#9a9a9a;transition:color .15s,border-color .15s,background .15s}
+    .ana-periods .p:hover{color:#cfcfcf}
+    .ana-periods .p.on{border-color:var(--accent-border);color:var(--accent-lt);background:var(--accent-soft)}
+    /* filtro por data (análise + feed) */
+    .ana-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .dt-in{font-size:12px;padding:5px 7px;border-radius:8px;border:1px solid var(--line-hard);background:#161616;color:#cfcfcf;color-scheme:dark;font-family:inherit;cursor:pointer}
+    .dt-in:focus{outline:none;border-color:var(--accent-border);color:#fff}
+    .ana-dates{display:flex;align-items:center;gap:6px;color:#6f6f6f;font-size:12px}
+    .ana-dates .arr{opacity:.55}
+    .feed-dates{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:2px 12px 6px;flex-shrink:0}
+    .feed-dates .p{font-size:11px;padding:3px 8px;border-radius:7px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#8f8f8f;transition:color .15s,border-color .15s,background .15s;user-select:none}
+    .feed-dates .p:hover{color:#cfcfcf}
+    .feed-dates .p.on{border-color:var(--accent-border);color:var(--accent-lt);background:var(--accent-soft)}
+    .feed-dates .fd-range{display:flex;align-items:center;gap:4px;color:#6f6f6f;font-size:11px}
+    .feed-dates .fd-range .dt-in{padding:3px 5px;font-size:11px}
+    .feed-dates .fd-range .arr{opacity:.55}
+    .ana-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:15px;padding:18px 22px;width:100%;max-width:1140px;margin:0 auto;overflow:hidden}
+    .ana-loading{margin:auto;color:var(--muted);font-size:14px;text-align:center}
+    /* KPIs (pedidos no período) */
+    .kpis{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .kpi{position:relative;overflow:hidden;border:1px solid var(--line-soft);border-radius:14px;padding:13px 16px 13px 18px;background:linear-gradient(180deg,var(--surface-raised),var(--surface))}
+    .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--muted2)}
+    .kpi.gold::before{background:linear-gradient(var(--gold),#a87f3f)}
+    .kpi.accent::before{background:linear-gradient(var(--accent-lt),var(--accent))}
+    .kpi .n{display:block;font-family:var(--sans);font-size:25px;font-weight:700;line-height:1;color:var(--fg);font-variant-numeric:tabular-nums}
+    .kpi.gold .n{color:var(--gold-soft)}.kpi.accent .n{color:var(--accent-lt)}
+    .kpi .l{display:block;font-size:11.5px;color:var(--muted);margin-top:6px}
+    /* gráfico horizontal (colunas = etapas do funil) */
+    .fchart-wrap{flex:1;min-height:150px;display:flex;flex-direction:column;border:1px solid var(--line-soft);border-radius:16px;padding:14px 16px 12px;background:rgba(255,255,255,.014);position:relative}
+    .fchart-h{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .fchart-t{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#8a8a8a;font-weight:600}
+    .fchart-legend{display:flex;align-items:center;gap:12px;font-size:10.5px;color:var(--muted2)}
+    .fchart-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+    .fchart-legend .dot-g{background:var(--accent)}.fchart-legend .dot-r{background:var(--danger)}
+    .fchart{flex:1;min-height:0;display:flex;align-items:stretch;gap:6px;transition:opacity .3s}
+    .fcol{flex:1 1 0;min-width:60px;display:flex;flex-direction:column;align-items:center;gap:7px;min-height:0}
+    .fval{flex-shrink:0;text-align:center;line-height:1.12}
+    .fval .fcount{font-size:18px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+    .fval .fpct{display:block;font-size:10.5px;color:var(--muted)}
+    .ftrack{flex:1;min-height:0;width:100%;display:flex;align-items:flex-end;justify-content:center;
+      background-image:linear-gradient(to top,var(--line) 1px,transparent 1px);background-size:100% 25%}
+    .fbar{width:clamp(16px,62%,46px);height:0;border-radius:7px 7px 2px 2px;
+      background:linear-gradient(180deg,var(--accent-lt),var(--accent) 55%,#15803d);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 0 18px rgba(34,197,94,.13);
+      transition:height .7s cubic-bezier(.2,.7,.2,1),background .3s}
+    .fbar.has{min-height:5px}
+    .fbar.drop{background:linear-gradient(180deg,#fca5a5,var(--danger) 55%,#b91c1c);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 0 18px rgba(248,113,113,.16)}
+    .flabel{flex-shrink:0;font-size:11px;color:var(--fg2);text-align:center;line-height:1.15;font-weight:500;min-height:26px}
+    .fkeep{flex-shrink:0;font-size:10px;color:var(--muted2);min-height:13px;text-align:center}
+    .fkeep.warn{color:#fca5a5;font-weight:700}
+    .fchart-empty{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);max-width:340px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.5}
+    /* rodapé discreto: última atualização + início da metrificação */
+    .ana-foot{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted2);line-height:1.5}
+    .ana-base{flex:1 1 320px;min-width:0}
+    .ana-meta{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+    .ana-meta b{color:var(--gold-soft);font-weight:600}
+    .ana-livedot{width:6px;height:6px}
+    @media (max-width:720px){
+      .ana-body{overflow-y:auto;overflow-x:hidden}
+      .kpis{grid-template-columns:repeat(2,1fr)}
+      .fchart-wrap{min-height:300px}
+      .fchart{overflow-x:auto;overflow-y:hidden}
+      .fcol{min-width:56px}
+      .ana-meta{white-space:normal}
+    }
+    /* ===== RESPONSIVE ===== */
+    @media (max-width:880px){
+      .feed{width:100%;min-width:0;border-right:none}
+      .detail{display:none}
+      body.viewing .feed{display:none}
+      body.viewing .detail{display:block}
+      .back{display:inline-flex}
+      .grid2{grid-template-columns:1fr}
+      .nav .sub,.nav .who{display:none}
+      .detail-inner{padding:16px 15px 60px}
+      .status{font-size:11px;gap:7px;padding:7px 14px}
+    }
+    @media (max-width:430px){
+      .filters .f .lbl{font-size:11px}
+      .kv{grid-template-columns:1fr}
+      .editgrid{grid-template-columns:1fr}.editgrid .full{grid-column:span 1}
+    }
+  </style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <section id="login">
+    <div class="box">
+      <div class="brand">Delivery Hub — Eterniza</div>
+      <p>Área restrita</p>
+      <form id="loginForm">
+        <input id="senha" type="password" placeholder="Senha de administrador" autocomplete="current-password" />
+        <button class="btn primary" type="submit" style="width:100%;margin-top:10px;padding:11px">Entrar</button>
+      </form>
+      <div class="erro" id="loginErro"></div>
+    </div>
+  </section>
+
+  <!-- APP -->
+  <div id="app">
+    <nav class="nav">
+      <div class="left">
+        <div style="min-width:0">
+          <div class="title">Delivery Hub — Eterniza</div>
+          <div class="sub">homenagem em vídeo</div>
+        </div>
+      </div>
+      <div class="right">
+        <span class="who" id="who"></span>
+        <button class="btn ghost sm" id="btnInstall" style="display:none">⬇ Instalar app</button>
+        <button class="btn ghost sm" id="btnAnalytics">📊 Análise</button>
+        <button class="btn ghost sm" id="btnLogout">Sair</button>
+      </div>
+    </nav>
+
+    <div class="body">
+      <aside class="feed">
+        <div class="feed-search">
+          <input id="feedSearch" type="search" placeholder="🔍 Buscar lead por número ou nome…" autocomplete="off" spellcheck="false" inputmode="search">
+          <button id="feedSearchClear" type="button" title="Limpar busca" aria-label="Limpar busca">✕</button>
+        </div>
+        <div class="feed-dates" id="feedDates">
+          <span class="p on" data-fpreset="tudo">Tudo</span>
+          <span class="p" data-fpreset="hoje">Hoje</span>
+          <span class="p" data-fpreset="ontem">Ontem</span>
+          <span class="fd-range"><input type="date" class="dt-in" id="feedFrom" title="Data inicial"><span class="arr">→</span><input type="date" class="dt-in" id="feedTo" title="Data final"></span>
+        </div>
+        <div class="filters" id="filters"></div>
+        <div class="feed-list scrollbar-hide" id="feedList"><div class="hint" style="margin:14px">Carregando pedidos…</div></div>
+      </aside>
+
+      <main class="detail grid-texture" id="detail">
+        <div class="detail-inner"><div class="emptystate"><div class="big">🕊️</div><div>Selecione um pedido para ver os detalhes.</div></div></div>
+      </main>
+    </div>
+
+    <footer class="status" id="status"></footer>
+  </div>
+
+  <div id="toast"></div>
+  <div id="lb"><img src="" alt="foto ampliada"></div>
+
+  <!-- PAINEL DE ANÁLISE (funil) -->
+  <div id="analytics">
+    <div class="ana-head">
+      <span class="ana-title">📊 Análise do funil</span>
+      <div class="ana-filter">
+        <div class="ana-periods">
+          <span class="p on" data-preset="hoje">Hoje</span>
+          <span class="p" data-preset="ontem">Ontem</span>
+          <span class="p" data-preset="7d">7 dias</span>
+          <span class="p" data-preset="30d">30 dias</span>
+          <span class="p" data-preset="tudo">Tudo</span>
+        </div>
+        <div class="ana-dates"><input type="date" class="dt-in" id="anaFrom" title="Data inicial"><span class="arr">→</span><input type="date" class="dt-in" id="anaTo" title="Data final"></div>
+      </div>
+      <button class="btn ghost sm" id="anaClose">✕ Fechar</button>
+    </div>
+    <div class="ana-body" id="funnelView"></div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const TKEY = 'eterniza_admin_token';
+    let token = sessionStorage.getItem(TKEY) || '';
+    let ORDERS = [], FILTER = 'produzir', selId = null, editing = false, initialFilterSet = false, userCleared = false;
+    let autoTimer = null, sig = '', selSig = '';
+    let deferredPrompt = null;
+    const isDesktop = () => window.matchMedia('(min-width:881px)').matches;
+
+    // status -> rótulo + cor do chip
+    const TAG = {
+      briefing_recebido:{l:'Briefing',c:'#85b7eb,#185fa5,rgba(55,138,221,.14)'},
+      checkout_iniciado:{l:'Checkout',c:'#facc15,#854f0b,rgba(234,179,8,.14)'},
+      recuperacao_pix:{l:'Pix não pago',c:'#fb923c,#993c1d,rgba(249,115,22,.14)'},
+      pago:{l:'Pago',c:'#22c55e,#0f6e2f,rgba(34,197,94,.14)'},
+      fila_edicao:{l:'Fila de edição',c:'#2dd4bf,#0f6e56,rgba(20,184,166,.14)'},
+      produzindo:{l:'Produzindo',c:'#a78bfa,#3c3489,rgba(139,92,246,.14)'},
+      pronta:{l:'Pronta',c:'#85b7eb,#185fa5,rgba(55,138,221,.14)'},
+      entregue:{l:'Entregue',c:'#86efac,#27500a,rgba(34,197,94,.18)'},
+      erro:{l:'Erro',c:'#f87171,#791f1f,rgba(239,68,68,.16)'},
+    };
+    const FLOW = ['pago','fila_edicao','produzindo','pronta','entregue'];
+    const FLOW_LBL = {pago:'Pago',fila_edicao:'Fila',produzindo:'Produzindo',pronta:'Pronta',entregue:'Entregue'};
+    const PRODUZIR = ['pago','fila_edicao','produzindo','pronta'];
+    const RECUPERAR = ['recuperacao_pix','checkout_iniciado','briefing_recebido'];
+    const RECOVERY = [['contatado','Contatado'],['convertido','Convertido ✓'],['descartado','Descartado']];
+    // tag de recuperação visível no card (nao_contatado / sem_resposta => sem tag)
+    const RECO_TAG = { contatado:['Contatado','#7cc0ff','rgba(96,165,250,.13)'], convertido:['Convertido ✓','#86efac','rgba(34,197,94,.15)'], descartado:['Descartado','#fca5a5','rgba(248,113,113,.13)'] };
+    function recoTag(o){ const t=RECO_TAG[o&&o.recovery_contact_status]; return t?`<span class="chip" style="color:${t[1]};background:${t[2]};border:1px solid ${t[1]}33">${esc(t[0])}</span>`:''; }
+    const ALL_STATUS = ['briefing_recebido','checkout_iniciado','recuperacao_pix','pago','fila_edicao','produzindo','pronta','entregue','erro'];
+    const FILTERS = [
+      {key:'recuperar',label:'Recuperar',test:o=>RECUPERAR.includes(o.status)},
+      {key:'produzir',label:'Produzir',test:o=>PRODUZIR.includes(o.status)},
+      {key:'entregues',label:'Entregues',test:o=>o.status==='entregue'},
+      {key:'erro',label:'Erro',test:o=>o.status==='erro'},
+      {key:'todos',label:'Todos',test:()=>true},
+    ];
+
+    const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const fmt = iso=>{try{return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}};
+    const fmtFull = iso=>{try{return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(e){return '—'}};
+    const money = v=>v==null?null:'R$ '+Number(v).toFixed(2).replace('.',',');
+    const waLink=(phone,text)=>`https://wa.me/${(phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(text)}`;
+    const firstName = n => (n||'').trim().split(/\s+/)[0]||'';
+    function chip(status){const t=TAG[status]||{l:status,c:'#9ca3af,#444,rgba(255,255,255,.06)'};const[fg,,bgc]=t.c.split(',');const bg=t.c.split(',').slice(2).join(',');return `<span class="chip" style="color:${fg};background:${bg};border:1px solid ${fg}33">${esc(t.l)}</span>`;}
+    function toast(m,kind){const t=$('toast');t.textContent=m;t.className='show'+(kind?' '+kind:'');clearTimeout(toast._t);toast._t=setTimeout(()=>t.className='',2400)}
+
+    // ===== filtro por data (fuso LOCAL do operador, ex.: BRT) — feed + análise =====
+    const pad2=n=>String(n).padStart(2,'0');
+    function ymdLocal(off){ const d=new Date(); if(off)d.setDate(d.getDate()+off); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+    function ymdToMid(s){ if(!s)return null; const p=String(s).split('-').map(Number); if(p.length!==3||!p[0])return null; return new Date(p[0],p[1]-1,p[2],0,0,0,0); }
+    // "Até" é INCLUSIVO do dia inteiro: limite superior = meia-noite do dia SEGUINTE (exclusivo)
+    function dateBounds(fromYMD,toYMD){ const a=ymdToMid(fromYMD); let b=ymdToMid(toYMD); if(b){b=new Date(b.getTime());b.setDate(b.getDate()+1);} return {fromTs:a?a.getTime():null,toTs:b?b.getTime():null,fromISO:a?a.toISOString():null,toISO:b?b.toISOString():null}; }
+    const PRESETS={ tudo:()=>['',''], hoje:()=>[ymdLocal(0),ymdLocal(0)], ontem:()=>[ymdLocal(-1),ymdLocal(-1)], '7d':()=>[ymdLocal(-6),ymdLocal(0)], '30d':()=>[ymdLocal(-29),ymdLocal(0)] };
+    function detectPreset(fromYMD,toYMD){ for(const k of ['tudo','hoje','ontem','7d','30d']){ const [a,b]=PRESETS[k](); if(a===(fromYMD||'')&&b===(toYMD||''))return k; } return null; }
+    let FEED_FROM='', FEED_TO='';                       // feed: default Tudo (sem filtro)
+    let ANA_FROM=ymdLocal(0), ANA_TO=ymdLocal(0);        // análise: default Hoje
+
+    async function api(action,params,opts){
+      opts=opts||{};
+      const qs=new URLSearchParams({action,...(params||{}),_:Date.now()}).toString();
+      const init={headers:{'x-admin-token':token},cache:'no-store'};
+      if(opts.method)init.method=opts.method;
+      if(opts.body){init.headers['Content-Type']='application/json';init.body=JSON.stringify(opts.body)}
+      const r=await fetch('/api/hub?'+qs,init);
+      const d=await r.json().catch(()=>({}));
+      if(r.status===429)throw{code:429,retryAfter:d.retryAfter||30};
+      if(r.status===401)throw{code:401,remaining:d.remaining};
+      if(!r.ok)throw{code:r.status,detail:d.detail||d.error};
+      return d;
+    }
+    function handleErr(e,fb){if(e&&e.code===401){stopAuto();sessionStorage.removeItem(TKEY);token='';showLogin('Sessão expirada. Entre de novo.');return}toast((fb||'Erro')+(e&&e.detail?': '+e.detail:''),'err')}
+    const showLogin=m=>{$('app').style.display='none';$('login').style.display='grid';if(m)$('loginErro').textContent=m};
+    const showApp=()=>{$('login').style.display='none';$('app').style.display='flex'};
+
+    // link do agente GPT (botão "Abrir agente GPT" na produção) — Lucas me passa a URL
+    const GPT_AGENT_URL='https://chatgpt.com/g/g-6a373795b044819186491ae48945fbec-diretor-de-producao-eterniza';
+
+    // ----- normalização (cobre os 2 formatos de "parente": "Meu Pai" e "seu pai") -----
+    function relPhrase(rel){
+      if(!rel) return '';
+      const r=rel.trim().toLowerCase().replace(/^(minha|meu|sua|seu)\s+/,'');
+      const map={'mãe':'da sua mãe','mae':'da sua mãe','pai':'do seu pai','companheiro(a)':'do seu companheiro(a)','companheiro':'do seu companheiro','companheira':'da sua companheira','filho(a)':'do seu filho(a)','filho':'do seu filho','filha':'da sua filha','irmão(ã)':'do seu irmão(ã)','irmão':'do seu irmão','irmao':'do seu irmão','irmã':'da sua irmã','avó':'da sua avó','avô':'do seu avô','ente querido':'do seu ente querido'};
+      if(map[r]) return map[r];
+      if(/pessoa especial|familiar|amigo/.test(r)) return '';
+      return 'de '+rel.trim();
+    }
+    function memPhrase(mem){if(!mem)return '';let s=mem.replace(/[\u{1F000}-\u{1FAFF}☀-➿←-⇿⬀-⯿️‍]/gu,'').trim();s=s.replace(/\bme\b/gi,'te');return s?s.charAt(0).toLowerCase()+s.slice(1):''}
+    function destPhrase(o){
+      const rp=relPhrase(o.relationship), nome=o.recipient_name;
+      if(nome && rp) return `${rp}, ${nome}`;
+      if(nome) return `de ${nome}`;
+      if(rp) return rp;
+      return 'de alguém muito especial';
+    }
+
+    // ----- mensagens (template — IA depois; usam os dados reais do form) -----
+    function deliverMsg(o){
+      const ola=firstName(o.customer_name)?`Olá ${firstName(o.customer_name)}!`:'Olá!';
+      return `${ola} 🕊️ A homenagem em vídeo ${destPhrase(o)} ficou pronta, feita com muito carinho.\n\nAqui está:\n${o.video_url||'[link do vídeo]'}`;
+    }
+    function recoveryMsg(o){
+      const ola=firstName(o.customer_name)?`Olá ${firstName(o.customer_name)}! 💛`:'Oi! 💛';
+      const mem=memPhrase(o.memory);
+      const meio=mem?`pra eternizar ${mem} ${destPhrase(o)}`:`${destPhrase(o)}`;
+      return `${ola} Aqui é da Eterniza.\n\nVi que você começou a homenagem em vídeo ${meio} — mas o pagamento ainda não foi concluído.\n\nPosso te ajudar a finalizar agora pra essa lembrança ganhar vida? 🕊️`;
+    }
+    async function downloadPhoto(url,name){
+      try{const r=await fetch(url);const b=await r.blob();const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=(name?'homenagem-'+name.replace(/\s+/g,'-'):'foto')+'.jpg';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);toast('Foto baixada ✓','ok')}
+      catch(e){window.open(url,'_blank');toast('Abri a foto em nova aba (salve por aí)','ok')}
+    }
+    async function copyPhoto(url){
+      try{
+        let blob=await (await fetch(url)).blob();
+        if(blob.type!=='image/png'){const img=await createImageBitmap(blob);const c=document.createElement('canvas');c.width=img.width;c.height=img.height;c.getContext('2d').drawImage(img,0,0);blob=await new Promise(res=>c.toBlob(res,'image/png'))}
+        await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+        toast('Imagem copiada — cole no ChatGPT (Ctrl+V) ✓','ok');
+      }catch(e){toast('Não deu p/ copiar; arraste ou baixe a foto','err')}
+    }
+    // textos pra copiar (formato WhatsApp do Lucas)
+    function memClean(m){return (m||'').replace(/[\u{1F000}-\u{1FAFF}☀-➿←-⇿⬀-⯿️‍]/gu,'').replace(/\s+/g,' ').trim()}
+    function briefingText(o){
+      const obj=o.objetivo||(o.typebot_payload&&o.typebot_payload.objetivo);
+      const L=[`parente: ${o.relationship||'—'}`,`nome: ${o.recipient_name||'—'}`,`memoria: ${memClean(o.memory)||'—'}`];
+      if(obj) L.push(`Objetivo: ${obj}`);
+      return L.join('\n');
+    }
+    function buyerText(o){
+      const tel=(o.phone_normalized||o.customer_phone||'').replace(/\D/g,'');
+      return `Nome\n${o.customer_name||'—'}\n\nE-mail\n${o.customer_email||'—'}\n\nCelular\n${tel||'—'}`;
+    }
+
+    // ================= RENDER =================
+    function counts(){const c={};FILTERS.forEach(f=>c[f.key]=ORDERS.filter(f.test).length);return c}
+    function renderFilters(){
+      const c=counts();
+      $('filters').innerHTML=FILTERS.map(f=>
+        `<div class="f ${f.key} ${f.key===FILTER?'on':''}" data-f="${f.key}"><span class="lbl">${f.label}</span><span class="c">${c[f.key]}</span></div>`
+      ).join('');
+    }
+    let SEARCH='';
+    // casa por NÚMERO (dígitos, em phone_normalized/customer_phone) OU por NOME (comprador/homenageado)
+    function matchesSearch(o,q){
+      q=(q||'').trim(); if(!q) return true;
+      const d=q.replace(/\D/g,'');
+      const phone=((o.phone_normalized||'')+(o.customer_phone||'')).replace(/\D/g,'');
+      if(d && phone.includes(d)) return true;
+      return (((o.customer_name||'')+' '+(o.recipient_name||'')).toLowerCase().includes(q.toLowerCase()));
+    }
+    // com busca ativa, procura em TODOS os status (acha o lead em qualquer aba); sem busca, usa a aba atual
+    function filtered(){
+      const q=(SEARCH||'').trim();
+      if(q) return ORDERS.filter(o=>matchesSearch(o,q)); // busca acha em qualquer status/data
+      const f=FILTERS.find(x=>x.key===FILTER)||FILTERS[0];
+      let list=ORDERS.filter(f.test);
+      const {fromTs,toTs}=dateBounds(FEED_FROM,FEED_TO); // filtro por data (opcional)
+      if(fromTs!=null||toTs!=null) list=list.filter(o=>{const t=new Date(o.created_at||0).getTime();return (fromTs==null||t>=fromTs)&&(toTs==null||t<toTs);});
+      return list;
+    }
+    // conteúdo INTERNO do card (sem o wrapper) — usado no reconcile
+    function cardInner(o){
+      const hasBuyer=!!o.customer_name;
+      const titulo=hasBuyer
+        ? `👤 ${esc(o.customer_name)} <span class="tagrole">(Comprador)</span>`
+        : `🕊️ Homenagem para ${esc(o.recipient_name||'(sem nome)')}`;
+      const sub=hasBuyer
+        ? `🕊️ Homenagem para <b>${esc(o.recipient_name||'—')}</b>${o.relationship?' · '+esc(o.relationship):''}`
+        : `${o.relationship?esc(o.relationship)+' · ':''}<span style="color:#e7a17a">comprador no pagamento</span>`;
+      return `<div class="fc-top"><span class="nm">${titulo}</span><span class="dt mono">${esc(fmt(o.created_at))}</span></div>
+          <span class="for">${sub}</span>
+          <div class="tags">${chip(o.status)}${recoTag(o)}</div>`;
+    }
+    const cardSig=o=>JSON.stringify([o.customer_name,o.recipient_name,o.relationship,o.status,o.created_at,o.recovery_contact_status]);
+    // RECONCILE: cria/atualiza/move só o que mudou. Cards iguais ficam intactos
+    // => não re-anima (acaba a "piscada") e não joga o scroll pro topo.
+    function renderFeed(){
+      const list=filtered(); const host=$('feedList');
+      { const fc=$('feedCount'); if(fc) fc.textContent=list.length; }
+      if(!list.length){ host.innerHTML='<div class="hint" style="margin:14px">'+(SEARCH.trim()?('Nenhum lead encontrado para “'+esc(SEARCH.trim())+'”.'):'Nenhum pedido nesta aba.')+'</div>'; return; }
+      const have={}; host.querySelectorAll('.feed-card[data-sel]').forEach(el=>{ have[el.dataset.sel]=el; });
+      [...host.children].forEach(el=>{ if(!el.classList.contains('feed-card')) el.remove(); }); // tira o "Carregando…"
+      const seen=new Set(); let prev=null;
+      for(const o of list){
+        const id=String(o.id); seen.add(id); const sig=cardSig(o); let el=have[id];
+        if(!el){
+          el=document.createElement('div'); el.dataset.sel=id; el.dataset.sig=sig;
+          el.className='feed-card'+(o.id===selId?' sel':''); el.innerHTML=cardInner(o);
+        } else {
+          if(el.dataset.sig!==sig){ el.innerHTML=cardInner(o); el.dataset.sig=sig; }
+          const cls='feed-card'+(o.id===selId?' sel':''); if(el.className!==cls) el.className=cls;
+        }
+        const ref=prev?prev.nextSibling:host.firstChild;
+        if(el!==ref) host.insertBefore(el,ref);
+        prev=el;
+      }
+      host.querySelectorAll('.feed-card[data-sel]').forEach(el=>{ if(!seen.has(el.dataset.sel)) el.remove(); });
+    }
+    function kv(k,v,copy){const empty=v==null||v==='';return `<div><div class="k">${k}</div><div class="v ${empty?'empty':''} ${(!empty&&copy)?'cp':''}" ${(!empty&&copy)?`data-copy="${esc(v)}"`:''}>${empty?'—':esc(v)}</div></div>`}
+
+    function renderDetail(){
+      const inner=$('detail').firstElementChild;
+      const o=ORDERS.find(x=>x.id===selId);
+      if(!o){inner.innerHTML='<div class="emptystate"><div class="big">🕊️</div><div>Selecione um pedido para ver os detalhes.</div></div>';return}
+      const phone=o.phone_normalized||o.customer_phone;
+      const isRec=RECUPERAR.includes(o.status);
+      const isProd=PRODUZIR.includes(o.status)||o.status==='entregue';
+
+      let html=`<button class="back" data-back>← Pedidos</button>
+        <div class="d-head">
+          <div style="min-width:0">
+            <div class="d-buyer">${o.customer_name?'👤 '+esc(o.customer_name)+' <span class="tagrole">(Comprador)</span>':'<span style="color:#888">👤 comprador ainda não identificado</span>'}</div>
+            <div class="htags" style="margin-top:7px">${chip(o.status)}<span class="mono" style="font-size:11px;color:var(--muted2)">${esc(fmt(o.created_at))}</span></div>
+          </div>
+          <div class="acts">
+            <button class="btn ghost sm" data-edit="${o.id}">✎ Editar</button>
+            <button class="btn danger sm" data-del="${o.id}">🗑 Excluir</button>
+          </div>
+        </div>`;
+
+      if(editing){ html+=editForm(o); inner.innerHTML=html; return; }
+
+      // dados da homenagem (comum aos dois formatos) — todos os campos coletados no fluxo
+      const obj=o.objetivo||(o.typebot_payload&&o.typebot_payload.objetivo);
+      const homage=`<div class="ov" style="margin-bottom:3px">🕊️ Homenageado(a) — homenagem para</div><div class="recip">${esc(o.recipient_name||'—')}</div>
+        <div class="recip-rel">${o.relationship?esc(o.relationship):'<span style="color:#555">relação não informada</span>'}</div>
+        ${o.memory?`<div style="margin-top:9px"><div class="ov" style="margin-bottom:4px">Memória mais marcante</div><div class="memory">${esc(o.memory)}</div></div>`:''}
+        ${obj?`<div style="margin-top:9px"><div class="ov" style="margin-bottom:3px">Objetivo da homenagem</div><div class="objv">${esc(obj)}</div></div>`:''}`;
+      // contato/pagamento — só campos presentes (lead não tem e-mail/valor; pago mostra o valor real, já com order bump)
+      const cf=[];
+      if(phone) cf.push(`<div><div class="k">WhatsApp</div><div class="v cp mono" data-copy="${esc(o.customer_phone||phone)}">${esc(o.customer_phone||phone)}</div></div>`);
+      if(o.customer_email) cf.push(`<div><div class="k">E-mail</div><div class="v cp" data-copy="${esc(o.customer_email)}">${esc(o.customer_email)}</div></div>`);
+      if(o.valor!=null) cf.push(`<div><div class="k">Valor pago</div><div class="v">${esc(money(o.valor))}</div></div>`);
+      if(o.pix_generated_at) cf.push(`<div><div class="k">Pix gerado</div><div class="v mono">${esc(fmt(o.pix_generated_at))}</div></div>`);
+      if(o.delivered_at) cf.push(`<div><div class="k">Entregue em</div><div class="v mono">${esc(fmt(o.delivered_at))}</div></div>`);
+      const contato=cf.length?`<div class="kvc">${cf.join('')}</div>`:'';
+
+      if(isRec){
+        // ===== FORMATO RECUPERAÇÃO (não pago) — foto aparece aqui (uma vez) =====
+        const foto=o.photo_url?`<img class="photo" data-photo="${esc(o.photo_url)}" src="${esc(o.photo_url)}" alt="foto" style="max-width:120px">`:`<div class="photo ph" style="max-width:120px">🖼️</div>`;
+        const rc=o.recovery_contact_status||'nao_contatado';
+        html+=`<div class="section"><div class="sh"><span class="st">Dados coletados</span></div><div class="sb">
+            <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+              <div style="flex:0 0 auto">${foto}</div>
+              <div style="min-width:200px;flex:1">${homage}</div>
+            </div>
+            ${contato}
+          </div></div>
+          <div class="section" style="margin-top:12px"><div class="sh"><span class="st">Recuperação de Pix</span></div><div class="sb stack">
+            <div class="alert warn"><span>⚠️</span><span>Deu o número e começou a homenagem, mas <b>não finalizou o pagamento</b>. Chame no WhatsApp pra ajudar a concluir.</span></div>
+            <div class="msgbox">
+              <div class="ov" style="margin-bottom:6px">Mensagem de recuperação</div>
+              <textarea class="msgIn" data-msg="rec-${o.id}" rows="4">${esc(recoveryMsg(o))}</textarea>
+              <div class="msgrow">
+                ${phone?`<a class="wpp" data-walink="rec-${o.id}" href="${waLink(phone,recoveryMsg(o))}" target="_blank" rel="noopener">📲 Chamar no WhatsApp</a>`:'<span class="hint">Sem telefone válido.</span>'}
+                <button class="btn sm" data-copymsg="rec-${o.id}">Copiar</button>
+              </div>
+            </div>
+            <div><div class="ov" style="margin-bottom:7px">Situação do contato</div>
+              <div class="pills">${RECOVERY.map(([k,l])=>`<span class="p ${rc===k?'on':''}" data-rc="${o.id}|${k}">${l}</span>`).join('')}</div>
+            </div>
+          </div></div>`;
+      } else {
+        // ===== FORMATO PRODUÇÃO / ENTREGA (pago) — foto aparece na produção (uma vez) =====
+        const idx=FLOW.indexOf(o.status);
+        const flow=FLOW.map((s,i)=>`<button class="${s===o.status?'cur':(i<idx&&idx>=0?'done':'')}" data-status="${o.id}|${s}">${FLOW_LBL[s]}</button>`).join('');
+        const purl=o.photo_url, rn=esc(o.recipient_name||''), memorial='Em memória de '+(o.recipient_name||''), ready=!!o.video_url;
+        html+=`<div class="section"><div class="sh"><span class="st">Dados da homenagem</span></div><div class="sb">
+            ${homage}
+            ${contato}
+          </div></div>
+          <div class="section" style="margin-top:14px"><div class="sh"><span class="st">Produção do vídeo</span></div><div class="sb stack">
+            <div class="alert" style="background:var(--accent-soft);border:1px solid var(--accent-border);color:var(--accent-lt)"><span>🎬</span><span>Copie/arraste a foto pro <b>Diretor de Produção Eterniza</b> (agente GPT). Quando o vídeo ficar pronto, cole o link e vá pra entrega.</span></div>
+            <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+              ${purl?`<img class="photo" data-photo="${esc(purl)}" draggable="true" src="${esc(purl)}" alt="foto do homenageado" style="max-width:170px;cursor:grab">`:'<div class="photo ph">🖼️</div>'}
+              <div style="flex:1;min-width:210px" class="stack">
+                ${purl?`<div class="msgrow" style="margin-top:0"><button class="btn sm primary" data-cpphoto="${esc(purl)}">📋 Copiar imagem</button><button class="btn sm" data-dlphoto="${esc(purl)}|${rn}">⬇ Baixar</button><a class="btn sm ghost" href="${esc(purl)}" target="_blank" rel="noopener">Abrir ↗</a><a class="btn sm" href="${GPT_AGENT_URL}" target="_blank" rel="noopener">🤖 Agente GPT ↗</a></div>`:'<div class="hint">⚠️ Sem foto enviada neste pedido.</div>'}
+                <div><div class="ov" style="margin-bottom:4px">Texto do vídeo</div><div class="msgrow" style="margin-top:0"><input readonly value="${esc(memorial)}" style="flex:1;min-width:150px"><button class="btn sm" data-copytext="${esc(memorial)}">Copiar</button></div></div>
+              </div>
+            </div>
+            <div><div class="ov" style="margin-bottom:7px">Etapa do pedido</div><div class="flow">${flow}</div></div>
+            <div><div class="ov" style="margin-bottom:6px">Link do vídeo final</div>
+              <div class="msgrow" style="margin-top:0">
+                <input class="vidIn" data-vid="${o.id}" placeholder="cole o link do vídeo pronto" value="${esc(o.video_url||'')}" style="flex:1;min-width:200px">
+                <button class="btn sm" data-savevid="${o.id}">Salvar</button>
+              </div>
+            </div>
+          </div></div>
+          <div class="section" style="margin-top:14px"><div class="sh"><span class="st">Entrega</span></div><div class="sb stack">
+            <div><div class="ov" style="margin-bottom:6px">Copiar dados (formato WhatsApp)</div>
+              <div class="msgrow" style="margin-top:0">
+                <button class="btn sm" data-copybrief="${o.id}">📋 Briefing (parente/nome/memória)</button>
+                <button class="btn sm" data-copybuyer="${o.id}">📋 Dados do comprador</button>
+              </div>
+            </div>
+            <div class="msgbox">
+              <div class="ov" style="margin-bottom:6px">Mensagem de entrega</div>
+              <textarea class="msgIn" data-msg="del-${o.id}" rows="5">${esc(deliverMsg(o))}</textarea>
+              <div class="msgrow">
+                ${phone?`<a class="wpp" data-walink="del-${o.id}" href="${waLink(phone,deliverMsg(o))}" target="_blank" rel="noopener">📲 Entregar no WhatsApp</a>`:'<span class="hint">Sem telefone válido.</span>'}
+                <button class="btn sm" data-copymsg="del-${o.id}">Copiar</button>
+                ${o.status!=='entregue'?`<button class="btn primary sm" data-status="${o.id}|entregue">Marcar entregue</button>`:''}
+              </div>
+              ${!ready?'<div class="hint" style="margin-top:10px">Cole o link do vídeo na produção pra ele entrar na mensagem de entrega automaticamente.</div>':''}
+            </div>
+          </div></div>`;
+      }
+
+      inner.innerHTML=html;
+    }
+
+    function editForm(o){
+      const F=(k,v)=>esc(v==null?'':v);
+      const opts=ALL_STATUS.map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${esc((TAG[s]||{l:s}).l)}</option>`).join('');
+      return `<div class="section"><div class="sh"><span class="st">Editar pedido · admin</span><span class="ov">corrija e salve</span></div><div class="sb">
+        <div class="editgrid">
+          <label><span class="ov">Comprador</span><input id="e_cn" value="${F('',o.customer_name)}"></label>
+          <label><span class="ov">WhatsApp</span><input id="e_ph" value="${F('',o.customer_phone||o.phone_normalized)}"></label>
+          <label><span class="ov">E-mail</span><input id="e_em" value="${F('',o.customer_email)}"></label>
+          <label><span class="ov">Valor (R$)</span><input id="e_vl" inputmode="decimal" value="${o.valor==null?'':o.valor}"></label>
+          <label><span class="ov">Homenageado(a)</span><input id="e_rn" value="${F('',o.recipient_name)}"></label>
+          <label><span class="ov">Relação</span><input id="e_rel" value="${F('',o.relationship)}"></label>
+          <label><span class="ov">Status</span><select id="e_st">${opts}</select></label>
+          <label><span class="ov">Foto (URL)</span><input id="e_ph2" value="${F('',o.photo_url)}"></label>
+          <label class="full"><span class="ov">Memória / história</span><textarea id="e_mem" rows="3">${F('',o.memory)}</textarea></label>
+          <label class="full"><span class="ov">Vídeo final (URL)</span><input id="e_vid" value="${F('',o.video_url)}"></label>
+        </div>
+        <div class="msgrow">
+          <button class="btn primary sm" data-savedit="${o.id}">💾 Salvar alterações</button>
+          <button class="btn ghost sm" data-canceledit>Cancelar</button>
+        </div>
+      </div></div>`;
+    }
+
+    function renderStatus(){
+      const c=counts();
+      $('status').innerHTML=
+        `<span class="m" data-f="todos"><b>${c.todos}</b> pedidos</span><span class="sep">·</span>`+
+        `<span class="m" data-f="recuperar"><b>${c.recuperar}</b> recuperar</span><span class="sep">·</span>`+
+        `<span class="m" data-f="produzir"><b>${c.produzir}</b> produzir</span><span class="sep">·</span>`+
+        `<span class="m" data-f="entregues"><b>${c.entregues}</b> entregues</span>`+
+        `<span class="lv"><span class="live-dot"></span>ao vivo</span>`;
+    }
+
+    function renderAll(){renderFilters();renderFeed();renderStatus();renderDetail();selSig=JSON.stringify(ORDERS.find(o=>o.id===selId)||null)}
+
+    function selectOrder(id){
+      selId=id; editing=false; userCleared=false;
+      document.body.classList.add('viewing');
+      renderFeed(); renderDetail();
+      selSig=JSON.stringify(ORDERS.find(o=>o.id===id)||null);
+      $('detail').scrollTop=0;
+    }
+    // clicar de novo no lead já selecionado (desktop) → limpa o painel e fica esperando nova seleção
+    function deselectOrder(){
+      selId=null; editing=false; userCleared=true;
+      document.body.classList.remove('viewing');
+      renderFeed(); renderDetail();
+      selSig=JSON.stringify(ORDERS.find(o=>o.id===selId)||null);
+      $('detail').scrollTop=0;
+    }
+    function ensureSelection(){
+      const list=filtered();
+      if(selId&&!list.some(o=>o.id===selId)&&!ORDERS.some(o=>o.id===selId))selId=null;
+      if(isDesktop()&&!selId&&!userCleared&&list.length){selId=list[0].id;selSig=JSON.stringify(list[0])}
+    }
+
+    function defaultFilter(){
+      for(const k of ['produzir','recuperar','entregues','erro']){
+        const f=FILTERS.find(x=>x.key===k);
+        if(f && ORDERS.filter(f.test).length) return k;
+      }
+      return 'todos';
+    }
+    // ordena por mais RECENTE primeiro (created_at). NÃO usar updated_at: o backfill do
+    // objetivo bumpou o updated_at dos leads antigos, jogando-os acima dos recentes.
+    function sortByActivity(arr){ return arr.slice().sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0)); }
+    async function load(){
+      userCleared=false;
+      try{
+        const {orders}=await api('list');
+        const raw=orders||[]; sig=JSON.stringify(raw); ORDERS=sortByActivity(raw);
+        if(!initialFilterSet){ FILTER=defaultFilter(); initialFilterSet=true; }
+        ensureSelection(); renderAll();
+      }catch(e){handleErr(e,'Falha ao carregar');if(e&&e.code!==401)$('feedList').innerHTML='<div class="hint" style="margin:14px">Erro ao carregar. <small>'+(e.detail||'')+'</small></div>'}
+    }
+
+    // refresh silencioso a cada 10s — preserva seleção, não atrapalha digitação
+    async function silentLoad(){
+      if(editing||document.hidden||$('lb').style.display==='grid'||$('analytics').style.display==='flex')return;
+      const a=document.activeElement; if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT'))return;
+      try{
+        const {orders}=await api('list');
+        const ns=JSON.stringify(orders||[]);
+        if(ns===sig){setLiveErr(false);return}
+        sig=ns; ORDERS=sortByActivity(orders||[]); ensureSelection();
+        renderFilters();renderFeed();renderStatus();
+        const cur=JSON.stringify(ORDERS.find(o=>o.id===selId)||null);
+        if(cur!==selSig){selSig=cur;renderDetail()}
+        setLiveErr(false);
+      }catch(e){if(e&&e.code===401)handleErr(e);else setLiveErr(true)}
+    }
+    function setLiveErr(v){document.querySelectorAll('.live-dot').forEach(d=>d.style.background=v?'#f87171':'')}
+    function startAuto(){stopAuto();autoTimer=setInterval(silentLoad,10000)}
+    function stopAuto(){clearInterval(autoTimer);autoTimer=null}
+
+    // ================= EVENTOS =================
+    document.addEventListener('click',async ev=>{
+      const t=ev.target;
+      const filt=t.closest('[data-f]'); if(filt){FILTER=filt.dataset.f;SEARCH='';const _fs=$('feedSearch');if(_fs){_fs.value='';_fs.parentElement.classList.remove('has')}userCleared=false;selId=isDesktop()?selId:null;if(!isDesktop())document.body.classList.remove('viewing');ensureSelection();renderAll();return}
+      const card=t.closest('[data-sel]'); if(card){const cid=card.dataset.sel;if(isDesktop()&&cid===selId){deselectOrder();}else{selectOrder(cid);}return}
+      if(t.closest('[data-back]')){document.body.classList.remove('viewing');return}
+      const ph=t.closest('[data-photo]'); if(ph){$('lb').querySelector('img').src=ph.dataset.photo;$('lb').style.display='grid';return}
+      const cp=t.closest('[data-copy]'); if(cp){navigator.clipboard?.writeText(cp.dataset.copy);toast('Copiado: '+cp.dataset.copy,'ok');return}
+
+      const stt=t.closest('[data-status]'); if(stt){const[id,s]=stt.dataset.status.split('|');try{await api('update',{id,status:s});toast('Status: '+(FLOW_LBL[s]||s),'ok');await load()}catch(e){handleErr(e,'Falha')}return}
+      const rc=t.closest('[data-rc]'); if(rc){const[id,k]=rc.dataset.rc.split('|');try{await api('recovery',{id,recovery_contact_status:k});if(k==='convertido')await api('update',{id,status:'fila_edicao'});toast(k==='convertido'?'Convertido → movido pra Produzir ✓':'Atualizado','ok');await load()}catch(e){handleErr(e,'Falha')}return}
+      const sv=t.closest('[data-savevid]'); if(sv){const id=sv.dataset.savevid;const inp=document.querySelector(`input[data-vid="${id}"]`);try{await api('set_video',{id,video_url:inp?inp.value.trim():''});toast('Vídeo salvo ✓','ok');const o=ORDERS.find(x=>x.id===id);if(o)o.video_url=inp.value.trim();selSig='';renderDetail()}catch(e){handleErr(e,'Falha')}return}
+      const cm=t.closest('[data-copymsg]'); if(cm){const ta=document.querySelector(`textarea[data-msg="${cm.dataset.copymsg}"]`);if(ta){navigator.clipboard?.writeText(ta.value);toast('Mensagem copiada','ok')}return}
+      const ct=t.closest('[data-copytext]'); if(ct){navigator.clipboard?.writeText(ct.dataset.copytext);toast('Copiado ✓','ok');return}
+      const dpf=t.closest('[data-dlphoto]'); if(dpf){const[u,n]=dpf.dataset.dlphoto.split('|');downloadPhoto(u,n);return}
+      const cpf=t.closest('[data-cpphoto]'); if(cpf){copyPhoto(cpf.dataset.cpphoto);return}
+      const cbr=t.closest('[data-copybrief]'); if(cbr){const o=ORDERS.find(x=>x.id===cbr.dataset.copybrief);if(o){navigator.clipboard?.writeText(briefingText(o));toast('Briefing copiado ✓','ok')}return}
+      const cbu=t.closest('[data-copybuyer]'); if(cbu){const o=ORDERS.find(x=>x.id===cbu.dataset.copybuyer);if(o){navigator.clipboard?.writeText(buyerText(o));toast('Dados do comprador copiados ✓','ok')}return}
+
+      const ed=t.closest('[data-edit]'); if(ed){editing=true;renderDetail();return}
+      if(t.closest('[data-canceledit]')){editing=false;renderDetail();return}
+      const sd=t.closest('[data-savedit]'); if(sd){await saveEdit(sd.dataset.savedit);return}
+      const dl=t.closest('[data-del]'); if(dl){if(!confirm('Excluir este pedido definitivamente?'))return;try{await api('delete',{id:dl.dataset.del});toast('Excluído','ok');selId=null;editing=false;if(!isDesktop())document.body.classList.remove('viewing');await load()}catch(e){handleErr(e,'Falha')}return}
+    });
+
+    // mantém wa.me sincronizado se editar a mensagem
+    document.addEventListener('input',ev=>{
+      const ta=ev.target; if(ta.tagName!=='TEXTAREA'||!ta.dataset.msg)return;
+      const link=document.querySelector(`[data-walink="${ta.dataset.msg}"]`);
+      if(link){const u=new URL(link.href);u.searchParams.set('text',ta.value);link.href=u.toString()}
+    });
+
+    async function saveEdit(id){
+      const g=i=>{const el=$(i);return el?el.value:undefined};
+      const body={
+        customer_name:g('e_cn'),customer_phone:g('e_ph'),customer_email:g('e_em'),
+        valor:g('e_vl'),recipient_name:g('e_rn'),relationship:g('e_rel'),
+        status:g('e_st'),photo_url:g('e_ph2'),memory:g('e_mem'),video_url:g('e_vid'),
+      };
+      try{await api('edit',{id},{method:'POST',body});toast('Pedido atualizado ✓','ok');editing=false;await load()}
+      catch(e){handleErr(e,'Falha ao salvar')}
+    }
+
+    $('lb').addEventListener('click',()=>$('lb').style.display='none');
+    $('liveBtn')?.addEventListener('click',()=>{sig='';selSig='';load()});
+    // busca de lead (número ou nome) — filtra o feed ao vivo
+    (function(){
+      const inp=$('feedSearch'); if(!inp) return;
+      const wrap=inp.parentElement, clr=$('feedSearchClear');
+      const apply=()=>{ SEARCH=inp.value; wrap.classList.toggle('has',!!inp.value.trim()); renderFeed(); };
+      inp.addEventListener('input',apply);
+      inp.addEventListener('keydown',e=>{ if(e.key==='Escape'){ inp.value=''; apply(); inp.blur(); } });
+      if(clr) clr.addEventListener('click',()=>{ inp.value=''; apply(); inp.focus(); });
+    })();
+    // filtro por data do FEED (Tudo/Hoje/Ontem + range De→Até) — client-side, default Tudo
+    (function(){
+      const box=$('feedDates'); if(!box) return;
+      const fromI=$('feedFrom'), toI=$('feedTo');
+      const hi=()=>{ const k=detectPreset(FEED_FROM,FEED_TO); box.querySelectorAll('.p').forEach(p=>p.classList.toggle('on',p.dataset.fpreset===k)); };
+      const apply=()=>{ FEED_FROM=fromI.value||''; FEED_TO=toI.value||''; hi(); renderFeed(); };
+      box.querySelectorAll('.p').forEach(p=>p.addEventListener('click',()=>{ const [a,b]=PRESETS[p.dataset.fpreset](); fromI.value=a; toI.value=b; apply(); }));
+      fromI.addEventListener('change',apply); toI.addEventListener('change',apply);
+      hi();
+    })();
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden&&token&&$('app').style.display!=='none')silentLoad()});
+    $('btnLogout').addEventListener('click',()=>{stopAuto();sessionStorage.removeItem(TKEY);token='';selId=null;document.body.classList.remove('viewing');showLogin()});
+
+    // ===== painel de análise · dashboard horizontal (auto-refresh próprio) =====
+    let anaBuilt=false, anaLastUpdate=0, anaSinceISO=null, anaTimer=null, anaTick=null;
+    const SHORT={pagina_venda:'Página',cta_clicou:'Clicou CTA',g1_abertura:'Abertura',g2_porquem:'Por quem',g3_nome:'Nome',g4_memoria:'Memória',g5_desejo:'Desejo',g6_video:'Vídeo',g7_foto:'Foto',g8_whatsapp:'WhatsApp'};
+
+    function buildFunnelSkeleton(funnel){
+      const cols=funnel.map(s=>`<div class="fcol" data-step="${esc(s.step)}" title="${esc(s.label)}">
+          <div class="fval"><span class="fcount">0</span><span class="fpct">0%</span></div>
+          <div class="ftrack"><div class="fbar"></div></div>
+          <div class="flabel">${esc(SHORT[s.step]||s.label)}</div>
+          <div class="fkeep"></div>
+        </div>`).join('');
+      $('funnelView').innerHTML=`
+        <div class="kpis">
+          <div class="kpi gold"><span class="n" id="kOferta">–</span><span class="l">Chegaram na oferta</span></div>
+          <div class="kpi"><span class="n" id="kRecup">–</span><span class="l">Pix em recuperação</span></div>
+          <div class="kpi"><span class="n" id="kPago">–</span><span class="l">Pagaram</span></div>
+          <div class="kpi accent"><span class="n" id="kConv">–</span><span class="l">Conversão oferta→pago</span></div>
+        </div>
+        <div class="fchart-wrap">
+          <div class="fchart-h">
+            <span class="fchart-t">Funil do fluxo · sessões rastreadas</span>
+            <span class="fchart-legend"><span><i class="dot-g"></i>etapa</span><span><i class="dot-r"></i>maior queda</span></span>
+          </div>
+          <div class="fchart" id="fchart">${cols}</div>
+          <div class="fchart-empty" id="fEmpty" hidden>Sem sessões rastreadas neste período ainda — os blocos vão preenchendo conforme o tráfego entrar.</div>
+        </div>
+        <div class="ana-foot">
+          <span class="ana-base">Cards de cima = pedidos no período · gráfico = sessões rastreadas desde a página de venda (bases diferentes).</span>
+          <span class="ana-meta"><span class="live-dot ana-livedot"></span>atualizado <b id="anaAgo">agora</b> · metrificando desde <b id="anaSince">—</b></span>
+        </div>`;
+      anaBuilt=true;
+    }
+
+    function paintFunnel(d){
+      const f=(d&&d.funnel)||[];
+      if(!anaBuilt){ if(!f.length){$('funnelView').innerHTML='<div class="ana-loading">Sem dados ainda.</div>';return} buildFunnelSkeleton(f); }
+      const chart=$('fchart'); if(!chart)return;
+      const top=Math.max(1,(f[0]&&f[0].count)||0);
+      let maxDropIdx=-1,maxDrop=0; // maior QUEDA EM VOLUME (onde se perde mais gente), não % relativo
+      for(let i=1;i<f.length;i++){const drop=(f[i-1].count||0)-(f[i].count||0);if(drop>maxDrop){maxDrop=drop;maxDropIdx=i}}
+      const total=f.reduce((a,s)=>a+(s.count||0),0);
+      const fEmpty=$('fEmpty'); if(fEmpty)fEmpty.hidden=total>0;
+      chart.style.opacity=total>0?'1':'.22';
+      const heights=[];
+      f.forEach((s,i)=>{
+        const col=chart.querySelector(`.fcol[data-step="${s.step}"]`); if(!col)return;
+        const cnt=s.count||0;
+        const pctTop=Math.max(0,Math.min(100,Math.round((cnt/top)*100)));
+        const prev=i>0?(f[i-1].count||0):null;
+        const keep=(prev!=null&&prev>0)?Math.round((cnt/prev)*100):null;
+        const isDrop=(i===maxDropIdx&&maxDrop>0);
+        col.querySelector('.fcount').textContent=cnt;
+        col.querySelector('.fpct').textContent=pctTop+'%';
+        const k=col.querySelector('.fkeep'); k.textContent=keep!=null?(keep+'% do anterior'+(isDrop?' 👈':'')):''; k.className='fkeep'+(isDrop?' warn':'');
+        const bar=col.querySelector('.fbar'); bar.classList.toggle('drop',isDrop); bar.classList.toggle('has',cnt>0);
+        heights.push([bar,pctTop]);
+      });
+      requestAnimationFrame(()=>heights.forEach(([bar,h])=>{bar.style.height=h+'%'}));
+      const sl=(d&&d.sales)||{}, conv=(sl.oferta>0)?Math.round((sl.pago/sl.oferta)*100):0;
+      if($('kOferta'))$('kOferta').textContent=sl.oferta||0;
+      if($('kRecup'))$('kRecup').textContent=sl.recuperacao||0;
+      if($('kPago'))$('kPago').textContent=sl.pago||0;
+      if($('kConv'))$('kConv').textContent=conv+'%';
+      anaSinceISO=(d&&d.trackingSince)||null;
+      if($('anaSince'))$('anaSince').textContent=anaSinceISO?fmtFull(anaSinceISO):'aguardando 1º evento';
+      anaLastUpdate=Date.now(); updateAnaAgo();
+    }
+
+    function updateAnaAgo(){
+      const el=$('anaAgo'); if(!el||!anaLastUpdate)return;
+      const s=Math.round((Date.now()-anaLastUpdate)/1000);
+      el.textContent = s<5?'agora':s<60?('há '+s+'s'):s<3600?('há '+Math.floor(s/60)+'min'):('às '+new Date(anaLastUpdate).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+    }
+    function setAnaLive(err){const d=document.querySelector('.ana-livedot'); if(d)d.style.background=err?'var(--danger)':'';}
+
+    // monta os params da análise a partir do range escolhido (from/to ISO); vazio = Tudo
+    function anaParams(){ const {fromISO,toISO}=dateBounds(ANA_FROM,ANA_TO); if(!fromISO&&!toISO) return {period:'tudo'}; const p={}; if(fromISO)p.from=fromISO; if(toISO)p.to=toISO; return p; }
+    // reflete ANA_FROM/ANA_TO nos inputs + destaca o preset correspondente
+    function syncAnaControls(){ const F=$('anaFrom'),T=$('anaTo'); if(F)F.value=ANA_FROM; if(T)T.value=ANA_TO; const k=detectPreset(ANA_FROM,ANA_TO); document.querySelectorAll('#analytics .ana-periods .p').forEach(p=>p.classList.toggle('on',p.dataset.preset===k)); }
+    async function refreshAnalytics(silent){
+      if(silent&&document.hidden)return;
+      try{ const d=await api('analytics',anaParams()); paintFunnel(d); setAnaLive(false); }
+      catch(e){
+        if(e&&e.code===401){stopAnaAuto();handleErr(e);return}
+        if(!anaBuilt)$('funnelView').innerHTML='<div class="ana-loading">Erro ao carregar a análise.'+(e&&e.detail?' '+esc(e.detail):'')+'</div>';
+        setAnaLive(true);
+      }
+    }
+    async function loadAnalytics(){ if(!anaBuilt)$('funnelView').innerHTML='<div class="ana-loading">Carregando análise…</div>'; await refreshAnalytics(false); }
+    function startAnaAuto(){ stopAnaAuto(); anaTimer=setInterval(()=>refreshAnalytics(true),20000); anaTick=setInterval(updateAnaAgo,1000); }
+    function stopAnaAuto(){ clearInterval(anaTimer);clearInterval(anaTick);anaTimer=anaTick=null; }
+    function openAnalytics(){ $('analytics').style.display='flex'; syncAnaControls(); loadAnalytics(); startAnaAuto(); }
+    function closeAnalytics(){ $('analytics').style.display='none'; stopAnaAuto(); }
+
+    $('btnAnalytics').addEventListener('click',openAnalytics);
+    $('anaClose').addEventListener('click',closeAnalytics);
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('analytics').style.display==='flex')closeAnalytics()});
+    document.querySelectorAll('#analytics .ana-periods .p').forEach(b=>b.addEventListener('click',()=>{
+      const [a,c]=PRESETS[b.dataset.preset](); ANA_FROM=a; ANA_TO=c; syncAnaControls(); refreshAnalytics(false);
+    }));
+    $('anaFrom').addEventListener('change',e=>{ ANA_FROM=e.target.value||''; syncAnaControls(); refreshAnalytics(false); });
+    $('anaTo').addEventListener('change',e=>{ ANA_TO=e.target.value||''; syncAnaControls(); refreshAnalytics(false); });
+    let lockTimer=null;
+    function lockLogin(secs){
+      const btn=$('loginForm').querySelector('button'), inp=$('senha');
+      clearInterval(lockTimer); secs=Math.max(1,Math.ceil(secs||30));
+      const tick=()=>{
+        if(secs<=0){clearInterval(lockTimer);btn.disabled=false;inp.disabled=false;$('loginErro').textContent='';return}
+        btn.disabled=true;inp.disabled=true;$('loginErro').textContent=`🔒 Muitas tentativas. Aguarde ${secs}s…`;secs--;
+      };
+      tick();lockTimer=setInterval(tick,1000);
+    }
+    $('loginForm').addEventListener('submit',async e=>{
+      e.preventDefault();$('loginErro').textContent='';
+      const v=$('senha').value.trim();if(!v){$('loginErro').textContent='Digite a senha.';return}
+      token=v;
+      try{await api('list');sessionStorage.setItem(TKEY,token);$('senha').value='';showApp();await load();startAuto()}
+      catch(e){
+        token='';
+        if(e&&e.code===429){lockLogin(e.retryAfter)}
+        else if(e&&e.code===401){$('loginErro').textContent='Senha incorreta.'+(e.remaining>0?` (${e.remaining} ${e.remaining===1?'tentativa':'tentativas'} restante${e.remaining===1?'':'s'})`:'')}
+        else{$('loginErro').textContent='Erro ao conectar.'}
+      }
+    });
+
+    // PWA: instalar
+    window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('btnInstall').style.display='inline-flex'});
+    $('btnInstall').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('btnInstall').style.display='none'});
+    window.addEventListener('appinstalled',()=>{$('btnInstall').style.display='none';toast('App instalado ✓','ok')});
+    if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/hub/sw.js',{scope:'/hub/'}).catch(()=>{}))}
+
+    if(token){showApp();load();startAuto()}else{showLogin()}
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "Delivery Hub — Eterniza",
+  "short_name": "Eterniza",
+  "description": "Painel operacional das homenagens em vídeo da Eterniza.",
+  "start_url": "/hub/",
+  "scope": "/hub/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#090909",
+  "theme_color": "#090909",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/hub/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/hub/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/hub/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

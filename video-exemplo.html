@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<title>Exemplo de homenagem — Eterniza</title>
+<style>
+  html,body{margin:0;height:100%;background:transparent}
+  body{display:flex;align-items:center;justify-content:center;overflow:hidden}
+  /* player próprio (sem YouTube): zero marca de canal, zero "relacionados", zero cache de avatar */
+  video{width:100%;height:100%;object-fit:contain;background:transparent;display:block;outline:none}
+</style>
+</head>
+<body>
+  <video id="v" controls playsinline preload="metadata"></video>
+  <script>
+    // Seleciona o vídeo de prova com base na resposta do Bloco 2 do bot (?v={{parente}}).
+    // Ex.: "sua mae" -> mae.mp4 | "seu pai" -> pai.mp4 | "seu irmao(a)" -> irmao.mp4 ...
+    // Robusto a acento/maiuscula/pontuacao. Se nada casar, cai no video padrao (nunca quebra).
+    var raw = new URLSearchParams(location.search).get('v') || '';
+    var legacy = raw.trim();
+    // normaliza: minusculas, sem acento, so letras/numeros
+    var norm = raw.toLowerCase()
+      .normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+      .replace(/[^a-z0-9]+/g, ' ').trim();
+
+    function pick(){
+      // compatibilidade antiga: ?v=jose | ?v=1..11
+      if (/^[0-9]{1,2}$/.test(legacy)) return legacy;
+      if (legacy === 'jose') return 'exemplo-jose';
+      // por categoria (ordem importa: especifico primeiro)
+      if (norm.indexOf('compan') >= 0) return 'companheiro';
+      if (norm.indexOf('filho')  >= 0) return 'filho';
+      if (norm.indexOf('irm')    >= 0) return 'irmao';
+      if (norm.indexOf('mae')    >= 0) return 'mae';
+      if (norm.indexOf('pai')    >= 0) return 'pai';
+      if (/especial|familiar|amigo|outro/.test(norm)) return 'familiar';
+      return 'exemplo-jose'; // fallback seguro = video de hoje
+    }
+
+    var name = pick();
+    var v = document.getElementById('v');
+    v.poster = '/videos/' + name + '.jpg';
+    v.src = '/videos/' + name + '.mp4';
+  </script>
+</body>
+</html>

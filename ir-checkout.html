@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Redirecionando…</title>
+<style>
+  html,body{margin:0;height:100%;background:#0a0a0c;color:#e7cfa3;font-family:system-ui,-apple-system,sans-serif;display:grid;place-items:center;text-align:center;padding:24px}
+  .msg{font-size:15px;opacity:.92}
+  .dbg{font-size:12px;color:#9a8459;word-break:break-all;max-width:92vw;margin-top:14px}
+</style>
+</head>
+<body>
+  <div>
+    <div class="msg">🔒 Levando você ao pagamento seguro…</div>
+    <div class="dbg" id="dbg"></div>
+  </div>
+  <script>
+    // Ponte bot -> Cakto: pré-preenche nome + telefone (limpo, com DDI 55) e repassa UTMs.
+    // Telefone igual nas 2 pontas => o pedido do bot (com foto) FUNDE com o evento do Cakto.
+    // (revertido de Kirvano p/ Cakto em 2026-06-22; o cakto-webhook segue ativo.)
+    (function () {
+      var CAKTO = 'https://pay.cakto.com.br/oqyboa5_932547';
+      var q = new URLSearchParams(location.search);
+      var out = new URLSearchParams();
+      var nome = (q.get('nome') || q.get('name') || '').trim();
+      if (nome) out.set('name', nome);
+      var phone = (q.get('phone') || q.get('whatsapp') || '').replace(/\D/g, '');
+      if (phone) { if (phone.length <= 11) phone = '55' + phone; out.set('phone', phone); }
+      ['utm_source', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'].forEach(function (k) {
+        var v = q.get(k); if (v) out.set(k, v);
+      });
+      var url = CAKTO + (out.toString() ? ('?' + out.toString()) : '');
+      if (q.get('debug') === '1') { document.getElementById('dbg').textContent = url; return; }
+      location.replace(url);
+    })();
+  </script>
+</body>
+</html>
