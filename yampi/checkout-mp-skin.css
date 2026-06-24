@@ -1,30 +1,21 @@
 /* ============================================================================
-   ETERNIZA · "MP Skin" para o checkout Yampi — VERSÃO CSS-ONLY
+   ETERNIZA · "MP Skin" para o checkout Yampi — CSS-ONLY (v2, alinhado)
    ----------------------------------------------------------------------------
    ONDE COLAR: Yampi -> Checkout -> Personalizar -> aba "Aparência" -> campo
-   "CSS customizado" (lá no fim da página). Cole este arquivo INTEIRO e Salvar.
+   "CSS customizado". Apague o que estiver lá, cole este arquivo INTEIRO, Salvar.
 
-   Por que CSS e não JS: a Yampi NÃO permite injetar <script> no checkout (o
-   campo "Scripts e Meta tags" só roda nas páginas de obrigado/pós-compra). Tudo
-   aqui é feito 100% em CSS, que é o que o checkout aceita — e roda nos 2 passos.
+   v2 corrige: logo "ilhota" cortada no header (agora header branco full-width),
+   faixa do topo flush em barra azul MP, e campos CPF/WhatsApp em largura cheia
+   (tinham a classe .keep-size que os deixava estreitos/desalinhados).
 
-   COMPLEMENTOS NATIVOS (faça também, fora deste CSS):
-     • Botões -> Botão Primário -> Cor do botão = #009EE3   (azul MP nativo)
-     • aba "Cabeçalho"  -> logo + selo "Pagamento seguro"
-     • aba "Rodapé"     -> texto "Pagamento processado pelo Mercado Pago"
-     • "Provas sociais" -> selos de segurança / garantia
-
-   LOGO DO MP VIA CSS: preencha a URL em --mp-logo abaixo (a faixa do topo usa
-   ela como background). Se deixar vazio, a faixa não mostra imagem.
-
-   ⚠️ DESTAQUE DO PIX (passo 2): está no fim do arquivo, COMENTADO, porque eu
-   ainda não vi o HTML do passo de pagamento ao vivo. Abra o passo do Pix, me
-   mande o print/HTML, que eu acerto o seletor exato e a gente descomenta.
+   COMPLEMENTOS NATIVOS (aba Aparência):
+     • Botões -> Botão Primário -> Cor = #009EE3
+     • Cores  -> Cor da etapa ativa = #009EE3 ; Cor dos títulos = #2D3277
+   A logo do Mercado Pago já aparece NATIVA na tela do Pix ("Pix processado por
+   Mercado Pago"), então não injetamos logo MP via CSS.
 ============================================================================ */
 
 body.mercadopago {
-  /* >>> COLE A URL DA LOGO OFICIAL DO MERCADO PAGO ENTRE OS PARÊNTESES <<< */
-  --mp-logo: url("");
   --mp-blue: #009ee3;
   --mp-blue-dark: #007eb5;
   --mp-blue-soft: #e5f6fd;
@@ -33,29 +24,36 @@ body.mercadopago {
   background: #ededed; /* fundo cinza-claro típico do Mercado Pago */
 }
 
-/* ---- Faixa superior "Pagamento seguro · Mercado Pago" --------------------
-   Usa o cabeçalho existente (.inner-header) e injeta a barra via ::before. */
-body.mercadopago header .inner-header { position: relative; }
-body.mercadopago header .inner-header::before {
+/* ---- Barra superior azul MP (flush, largura total) ----------------------- */
+body.mercadopago::before {
   content: "🔒  Pagamento 100% seguro · Mercado Pago";
   display: block;
   width: 100%;
   box-sizing: border-box;
-  margin: 0 0 12px;
-  padding: 9px 14px;
-  background: #fff;
-  border: 1px solid #e6e6e6;
-  border-radius: 8px;
-  color: #4b5563;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 10px 16px;
+  background: var(--mp-blue);
+  color: #fff;
   text-align: center;
+  font-size: 13px;
+  font-weight: 700;
   letter-spacing: .2px;
 }
-/* OBS: a logo do Mercado Pago já aparece NATIVA na tela do Pix ("Pix processado
-   por Mercado Pago"), então não injetamos logo via CSS aqui — evita gap vazio. */
 
-/* ---- Botões primários -> azul MP (reforço; cor base você põe nativo) ------ */
+/* ---- Header branco full-width (corrige a logo "ilhota"/cortada) ----------- */
+body.mercadopago header {
+  background: #fff !important;
+  border-bottom: 1px solid #e6e6e6;
+  padding: 8px 0;
+  margin-bottom: 0;
+}
+body.mercadopago header .img-logo { max-height: 40px; width: auto; }
+
+/* ---- Campos: CPF e WhatsApp em largura cheia (tinham .keep-size) ---------- */
+body.mercadopago .form-group.keep-size,
+body.mercadopago .form-group-cpf,
+body.mercadopago .form-group-homephone { width: 100% !important; }
+
+/* ---- Botões primários -> azul MP ----------------------------------------- */
 body.mercadopago .btn-primary,
 body.mercadopago .btn-send,
 body.mercadopago button[type="submit"].btn-block {
@@ -89,12 +87,12 @@ body.mercadopago select:focus {
 /* ---- Títulos das etapas em azul-tinta MP --------------------------------- */
 body.mercadopago .box-title .title { color: var(--mp-ink); }
 
-/* ---- Cartões com cantos suaves (cara mais "MP") -------------------------- */
+/* ---- Cartões com cantos suaves ------------------------------------------- */
 body.mercadopago .col-checkout,
 body.mercadopago .box-title.--with-preview,
 body.mercadopago .holder-container-resume { border-radius: 8px; }
 
-/* ---- Selo de confiança no rodapé do checkout (UM só — evita duplicar) ---- */
+/* ---- Selo de confiança no rodapé (UM só) --------------------------------- */
 body.mercadopago .inner-body::after {
   content: "Ambiente 100% seguro · Seus dados protegidos · Garantia de 7 dias";
   display: block;
@@ -109,23 +107,12 @@ body.mercadopago .inner-body::after {
 }
 
 /* ===========================================================================
-   DESTAQUE DO PIX (passo 2) — DESCOMENTAR + AJUSTAR SELETOR APÓS VER AO VIVO
-   ---------------------------------------------------------------------------
-   Troque os seletores abaixo pelos reais do método Pix (me mande o HTML do
-   passo de pagamento que eu acerto). Exemplos comuns na Yampi:
-       label[for*="pix"]  /  .payment-method-pix  /  [data-payment="pix"]
+   DESTAQUE DO PIX (passo 2) — ajustar seletor após validar o HTML do passo 2.
+   Mantido comentado pra não introduzir bug; o nativo (reordenar Pix) é melhor.
    ===========================================================================
-body.mercadopago label[for*="pix"],
-body.mercadopago [data-payment="pix"] {
+body.mercadopago label[for*="pix"] {
   outline: 2px solid var(--mp-blue) !important;
   background: var(--mp-blue-soft) !important;
   border-radius: 8px !important;
-}
-body.mercadopago label[for*="pix"]::after,
-body.mercadopago [data-payment="pix"] .title::after {
-  content: " • aprovação na hora";
-  color: var(--mp-blue);
-  font-weight: 700;
-  font-size: 12px;
 }
 =========================================================================== */
