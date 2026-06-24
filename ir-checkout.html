@@ -17,24 +17,32 @@
     <div class="dbg" id="dbg"></div>
   </div>
   <script>
-    // Ponte bot -> Yampi: leva o telefone do bot como metadata[bot_phone] (e nome como bot_name).
-    // O metadata volta no webhook (order.*), então o pagamento FUNDE com o lead do bot (com foto)
-    // pelo phone_normalized — INDEPENDENTE do telefone que o cliente digitar no checkout.
-    // (migrado de Cakto p/ Yampi em 2026-06-24; recebe em /api/yampi-webhook.)
+    // Ponte bot -> checkout. Suporta Cakto e Yampi, prontos pra alternar.
+    // >>> TROCAR DE GATEWAY = mudar a constante GATEWAY abaixo ('cakto' | 'yampi') e redeploy. <<<
+    // O telefone do bot viaja p/ o checkout (Cakto: query name/phone; Yampi: metadata[bot_phone]),
+    // então o pedido do bot (com foto) FUNDE com o pagamento pelo phone_normalized no webhook.
     (function () {
-      var YAMPI = 'https://eterniza.pay.yampi.com.br/r/E8VSH1ZWAB';
-      var q = new URLSearchParams(location.search);
+      var GATEWAY = 'cakto'; // ATIVO: 'cakto' (cakto-webhook) | 'yampi' (yampi-webhook)
+      var CFG = {
+        cakto: { url: 'https://pay.cakto.com.br/oqyboa5_932547', mode: 'query' },
+        yampi: { url: 'https://eterniza.pay.yampi.com.br/r/E8VSH1ZWAB', mode: 'metadata' }
+      };
+      var g = CFG[GATEWAY], q = new URLSearchParams(location.search);
       var nome = (q.get('nome') || q.get('name') || '').trim();
       var phone = (q.get('phone') || q.get('whatsapp') || '').replace(/\D/g, '');
       if (phone && phone.length <= 11) phone = '55' + phone;
-      // Yampi: metadata[chave]=valor (colchete literal, valor encodado) — sobrevive até o webhook.
       var parts = [];
-      if (phone) parts.push('metadata[bot_phone]=' + encodeURIComponent(phone));
-      if (nome) parts.push('metadata[bot_name]=' + encodeURIComponent(nome));
+      if (g.mode === 'metadata') { // Yampi: metadata[chave]=valor -> volta no webhook order.*
+        if (phone) parts.push('metadata[bot_phone]=' + encodeURIComponent(phone));
+        if (nome) parts.push('metadata[bot_name]=' + encodeURIComponent(nome));
+      } else {                     // Cakto: name/phone direto na query (pré-preenche o checkout)
+        if (nome) parts.push('name=' + encodeURIComponent(nome));
+        if (phone) parts.push('phone=' + encodeURIComponent(phone));
+      }
       ['utm_source', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'].forEach(function (k) {
         var v = q.get(k); if (v) parts.push(k + '=' + encodeURIComponent(v));
       });
-      var url = YAMPI + (parts.length ? ('?' + parts.join('&')) : '');
+      var url = g.url + (parts.length ? ('?' + parts.join('&')) : '');
       if (q.get('debug') === '1') { document.getElementById('dbg').textContent = url; return; }
       location.replace(url);
     })();
