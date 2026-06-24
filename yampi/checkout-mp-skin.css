@@ -52,17 +52,8 @@ body.mercadopago header .inner-header::before {
   text-align: center;
   letter-spacing: .2px;
 }
-/* Se você preencheu --mp-logo, mostra a logo do MP acima do texto da faixa */
-body.mercadopago header .inner-header::after {
-  content: "";
-  display: block;
-  height: 26px;
-  margin: -4px 0 10px;
-  background-image: var(--mp-logo);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-}
+/* OBS: a logo do Mercado Pago já aparece NATIVA na tela do Pix ("Pix processado
+   por Mercado Pago"), então não injetamos logo via CSS aqui — evita gap vazio. */
 
 /* ---- Botões primários -> azul MP (reforço; cor base você põe nativo) ------ */
 body.mercadopago .btn-primary,
@@ -103,8 +94,7 @@ body.mercadopago .col-checkout,
 body.mercadopago .box-title.--with-preview,
 body.mercadopago .holder-container-resume { border-radius: 8px; }
 
-/* ---- Selo de confiança no rodapé do checkout ----------------------------- */
-body.mercadopago footer::after,
+/* ---- Selo de confiança no rodapé do checkout (UM só — evita duplicar) ---- */
 body.mercadopago .inner-body::after {
   content: "Ambiente 100% seguro · Seus dados protegidos · Garantia de 7 dias";
   display: block;
