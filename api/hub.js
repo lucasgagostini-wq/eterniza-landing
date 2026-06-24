@@ -76,7 +76,7 @@ module.exports = async (req, res) => {
       const pago = list.filter(o => PAID.includes(o.status)).length;
       const recuperacao = list.filter(o => o.status === 'recuperacao_pix').length;
       const LBL = { pagina_venda: 'Página de venda', cta_clicou: 'Clicou no CTA', g1_abertura: 'Bot · abertura', g2_porquem: 'Por quem', g3_nome: 'Nome', g4_memoria: 'Memória', g5_desejo: 'Desejo', g6_video: 'Viu o vídeo', g7_foto: 'Enviou a foto', g8_whatsapp: 'Deixou o WhatsApp' };
-      const BOT = ['g1_abertura', 'g2_porquem', 'g3_nome', 'g4_memoria', 'g5_desejo', 'g6_video', 'g7_foto', 'g8_whatsapp'];
+      const BOT = ['g1_abertura', 'g2_porquem', 'g3_nome', 'g4_memoria', 'g5_desejo', 'g7_foto', 'g8_whatsapp']; // g6_video removido do bot (24/06)
       // FUNIL = só sessões rastreadas (página de venda -> blocos do bot). Coerente e monotônico.
       const funnel = [
         { step: 'pagina_venda', label: LBL.pagina_venda, count: ev('pagina_venda') },
