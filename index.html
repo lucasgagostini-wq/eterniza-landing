@@ -305,11 +305,11 @@
       <div class="kicker">Reações reais</div>
       <div class="section-title">Quem recebeu, se emocionou</div>
       <div class="prova-row" id="provaRow">
+        <img class="prova" src="/provas/5.webp" alt="Reação real de uma cliente da Eterniza no WhatsApp" />
         <img class="prova" src="/provas/1.webp" alt="Reação real de uma cliente da Eterniza no WhatsApp" />
         <img class="prova" src="/provas/2.webp" alt="Reação real de um cliente da Eterniza no WhatsApp" />
         <img class="prova" src="/provas/3.webp" alt="Reação real de um cliente da Eterniza no WhatsApp" />
         <img class="prova" src="/provas/4.webp" alt="Reação real de um cliente da Eterniza no WhatsApp" />
-        <img class="prova" src="/provas/5.webp" alt="Reação real de uma cliente da Eterniza no WhatsApp" />
       </div>
       <p class="video-hint">Conversas reais com nossos clientes · arraste para ver mais</p>
     </section>
@@ -412,7 +412,10 @@
       if (!base.length) return;
       // 3 cópias para loop infinito sem começo/fim
       base.forEach(function (n) { row.appendChild(n.cloneNode(true)); });
-      base.forEach(function (n) { row.insertBefore(n.cloneNode(true), row.firstChild); });
+      // prepend mantendo a MESMA ordem (inserir sempre antes do 1º nó original);
+      // usar row.firstChild aqui invertia a sequência e duplicava um item na costura do loop.
+      var firstOrig = row.firstChild;
+      base.forEach(function (n) { row.insertBefore(n.cloneNode(true), firstOrig); });
       var setW = function () { return row.scrollWidth / 3; };
       var center = function () { row.scrollLeft = setW(); };
       requestAnimationFrame(center);
