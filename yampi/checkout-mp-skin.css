@@ -46,7 +46,7 @@ body.mercadopago header {
   padding: 8px 0;
   margin-bottom: 0;
 }
-body.mercadopago header .img-logo { max-height: 40px; width: auto; }
+body.mercadopago header .img-logo { max-height: 64px !important; width: auto !important; }
 
 /* ---- Campos: CPF e WhatsApp em largura cheia (tinham .keep-size) ---------- */
 body.mercadopago .form-group.keep-size,
