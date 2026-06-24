@@ -106,6 +106,25 @@ body.mercadopago .inner-body::after {
   color: #5b6470;
 }
 
+/* ---- Rodapé no MOBILE: centralizar e dar respiro --------------------------
+   Yampi usa footer.-mobile-left, que joga "Informações de contato", CNPJ e
+   WhatsApp pra esquerda. Aqui centralizamos tudo e arejamos o selo. */
+@media (max-width: 600px) {
+  body.mercadopago footer.-mobile-left,
+  body.mercadopago footer.-mobile-left *,
+  body.mercadopago .store-info-holder,
+  body.mercadopago .contact-holder,
+  body.mercadopago .security-label { text-align: center !important; }
+  body.mercadopago footer .security-label { display: flex !important; justify-content: center !important; }
+
+  body.mercadopago .inner-body::after {
+    font-size: 11.5px;
+    line-height: 1.7;
+    padding: 16px 18px 0;
+    margin: 14px 14px 26px;
+  }
+}
+
 /* ===========================================================================
    DESTAQUE DO PIX (passo 2) — ajustar seletor após validar o HTML do passo 2.
    Mantido comentado pra não introduzir bug; o nativo (reordenar Pix) é melhor.
