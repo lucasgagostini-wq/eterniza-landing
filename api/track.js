@@ -6,6 +6,7 @@ const { sbInsert } = require('./_lib');
 const STEPS = new Set([
   'pagina_venda', 'cta_clicou',
   'g1_abertura', 'g2_porquem', 'g3_nome', 'g4_memoria', 'g5_desejo', 'g6_video', 'g7_foto', 'g8_whatsapp',
+  'go_cakto', 'go_yampi', // A/B de gateway: atribuição (quantos foram pra cada checkout)
 ]);
 
 module.exports = async (req, res) => {

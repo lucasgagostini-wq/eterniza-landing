@@ -86,6 +86,45 @@ module.exports = async (req, res) => {
       // VENDAS = bloco separado (orders); base diferente (não entra no % do funil de sessões)
       return res.status(200).json({ funnel, sales: { oferta, pago, recuperacao }, period, from: from || null, to: to || null, trackingSince, botTracking: BOT.some(b => ev(b) > 0) });
     }
+    // A/B Cakto x Yampi: atribuição (go_cakto/go_yampi) + vendas/faturamento por gateway (etiqueta cakto_payload._gateway)
+    if (action === 'ab') {
+      const from = (req.query.from || '').toString().trim();
+      const to = (req.query.to || '').toString().trim();
+      const period = (req.query.period || '').toString();
+      let f = '';
+      if (from || to) {
+        if (from) f += `&created_at=gte.${encodeURIComponent(from)}`;
+        if (to) f += `&created_at=lt.${encodeURIComponent(to)}`;
+      } else {
+        const hours = period === 'hoje' ? 24 : period === '30d' ? 720 : period === 'tudo' ? null : period === '7d' ? 168 : 168;
+        const since = hours ? new Date(Date.now() - hours * 3600 * 1000).toISOString() : null;
+        if (since) f = `&created_at=gte.${encodeURIComponent(since)}`;
+      }
+      // denominador: sessões DISTINTAS mandadas pra cada gateway
+      const evs = await sbSelect(`funnel_events?select=session_id,step&step=in.(go_cakto,go_yampi)${f}&limit=200000`).catch(() => []);
+      const aset = { cakto: new Set(), yampi: new Set() };
+      for (const e of (Array.isArray(evs) ? evs : [])) { (e.step === 'go_yampi' ? aset.yampi : aset.cakto).add(e.session_id); }
+      // vendas: pega só o gateway do jsonb (leve), status e valor
+      const ords = await sbSelect(`orders?select=status,valor,gw:cakto_payload->>_gateway${f}&limit=100000`).catch(() => []);
+      const PAID = ['pago', 'fila_edicao', 'produzindo', 'pronta', 'entregue'];
+      const out = {
+        cakto: { assigned: aset.cakto.size, paid: 0, recuperacao: 0, revenue: 0 },
+        yampi: { assigned: aset.yampi.size, paid: 0, recuperacao: 0, revenue: 0 },
+      };
+      for (const o of (Array.isArray(ords) ? ords : [])) {
+        const gw = (o.gw === 'yampi') ? 'yampi' : 'cakto'; // sem etiqueta (legado) = cakto
+        if (PAID.includes(o.status)) { out[gw].paid++; out[gw].revenue += Number(o.valor) || 0; }
+        else if (o.status === 'recuperacao_pix') out[gw].recuperacao++;
+      }
+      for (const k of ['cakto', 'yampi']) {
+        const s = out[k];
+        s.conversion = s.assigned ? +(100 * s.paid / s.assigned).toFixed(1) : null;       // % venda/visitante
+        s.rev_per_visitor = s.assigned ? +(s.revenue / s.assigned).toFixed(2) : null;       // R$ por visitante (KPI principal)
+        s.ticket = s.paid ? +(s.revenue / s.paid).toFixed(2) : null;                         // ticket médio (mostra efeito do bump)
+        s.revenue = +s.revenue.toFixed(2);
+      }
+      return res.status(200).json({ ab: out, period: period || null, from: from || null, to: to || null });
+    }
     if (action === 'update') {
       const status = (req.query.status || '').toString();
       if (!id || !STATUSES.includes(status)) return res.status(400).json({ error: 'bad_params' });

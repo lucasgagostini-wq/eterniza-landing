@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
     valor: valorRaw != null ? Number(valorRaw) : undefined,
     payment_status: String(pick(data.status, body.status, 'paid')),
     status,
-    cakto_payload: body,
+    cakto_payload: { _gateway: 'cakto', ...body }, // etiqueta p/ atribuição do A/B (Yampi grava 'yampi')
   };
   if (status === 'recuperacao_pix') patch.pix_generated_at = new Date().toISOString();
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);

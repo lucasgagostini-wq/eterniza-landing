@@ -17,17 +17,42 @@
     <div class="dbg" id="dbg"></div>
   </div>
   <script>
-    // Ponte bot -> checkout. Suporta Cakto e Yampi, prontos pra alternar.
-    // >>> TROCAR DE GATEWAY = mudar a constante GATEWAY abaixo ('cakto' | 'yampi') e redeploy. <<<
+    // Ponte bot -> checkout. TESTE A/B Cakto x Yampi (50/50).
     // O telefone do bot viaja p/ o checkout (Cakto: query name/phone; Yampi: metadata[bot_phone]),
     // então o pedido do bot (com foto) FUNDE com o pagamento pelo phone_normalized no webhook.
+    // - Sorteio persistido (localStorage): a MESMA pessoa volta sempre pro mesmo gateway.
+    // - Beacon /api/track?step=go_cakto|go_yampi -> conta quantos foram pra cada lado (atribuição do A/B).
+    // - Override p/ QA: ?gw=cakto ou ?gw=yampi (força e NÃO conta no teste).
+    // - REVERTER o teste = mudar SPLIT_YAMPI p/ 0 (100% Cakto) e redeploy. 1 = 100% Yampi.
     (function () {
-      var GATEWAY = 'cakto'; // ATIVO: 'cakto' (cakto-webhook) | 'yampi' (yampi-webhook)
+      var SPLIT_YAMPI = 0.5; // fração do tráfego que vai pra YAMPI (0 = só Cakto; 1 = só Yampi)
       var CFG = {
         cakto: { url: 'https://pay.cakto.com.br/oqyboa5_932547', mode: 'query' },
         yampi: { url: 'https://eterniza.pay.yampi.com.br/r/E8VSH1ZWAB', mode: 'metadata' }
       };
-      var g = CFG[GATEWAY], q = new URLSearchParams(location.search);
+      var q = new URLSearchParams(location.search);
+
+      // --- escolha do gateway (A/B) ---
+      var GATEWAY, abSid = null;
+      var forced = (q.get('gw') || '').toLowerCase();
+      if (forced === 'cakto' || forced === 'yampi') {
+        GATEWAY = forced; // QA: força e não conta no teste
+      } else {
+        var KEY = 'eterniza_ab_v1', saved = null;
+        try { var raw = localStorage.getItem(KEY); if (raw) { var o = JSON.parse(raw); saved = o.g; abSid = o.s; } } catch (e) {}
+        if (saved === 'cakto' || saved === 'yampi') {
+          GATEWAY = saved;
+        } else {
+          GATEWAY = (Math.random() < SPLIT_YAMPI) ? 'yampi' : 'cakto';
+          abSid = 'ab_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+          try { localStorage.setItem(KEY, JSON.stringify({ g: GATEWAY, s: abSid })); } catch (e) {}
+        }
+        if (!abSid) abSid = 'ab_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        // beacon de atribuição (fire-and-forget; /api/track é do mesmo domínio)
+        try { new Image().src = '/api/track?step=go_' + GATEWAY + '&sid=' + encodeURIComponent(abSid) + '&t=' + Date.now(); } catch (e) {}
+      }
+
+      var g = CFG[GATEWAY];
       var nome = (q.get('nome') || q.get('name') || '').trim();
       var phone = (q.get('phone') || q.get('whatsapp') || '').replace(/\D/g, '');
       if (phone && phone.length <= 11) phone = '55' + phone;
@@ -43,7 +68,7 @@
         var v = q.get(k); if (v) parts.push(k + '=' + encodeURIComponent(v));
       });
       var url = g.url + (parts.length ? ('?' + parts.join('&')) : '');
-      if (q.get('debug') === '1') { document.getElementById('dbg').textContent = url; return; }
+      if (q.get('debug') === '1') { document.getElementById('dbg').textContent = '[' + GATEWAY + '] ' + url; return; }
       location.replace(url);
     })();
   </script>
