@@ -204,6 +204,22 @@
     .ana-periods .p{font-size:12px;padding:6px 11px;border-radius:9px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#9a9a9a;transition:color .15s,border-color .15s,background .15s}
     .ana-periods .p:hover{color:#cfcfcf}
     .ana-periods .p.on{border-color:var(--accent-border);color:var(--accent-lt);background:var(--accent-soft)}
+    /* A/B Cakto x Yampi */
+    .abwrap{margin-top:18px;border-top:1px solid var(--line-hard);padding-top:16px}
+    .abwrap h4{margin:0 0 10px;font-size:13px;color:#cfcfcf;font-weight:600;letter-spacing:.2px}
+    .abwrap h4 .ab-since{color:#777;font-weight:400;font-size:11px;margin-left:6px}
+    .abgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .abcol{border:1px solid var(--line-hard);border-radius:12px;padding:14px;background:#161616;position:relative;transition:border-color .2s,background .2s}
+    .abcol.win{border-color:var(--accent-border);background:var(--accent-soft)}
+    .abcol .gw{font-size:13px;font-weight:700;color:#dcdcdc;display:flex;align-items:center;gap:6px;margin-bottom:9px}
+    .abcol .gw small{color:#777;font-weight:400}
+    .abcol .win-tag{position:absolute;top:11px;right:11px;font-size:10px;font-weight:700;color:var(--accent-lt);background:var(--accent-soft);border:1px solid var(--accent-border);border-radius:999px;padding:2px 8px}
+    .abrow{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#9a9a9a}
+    .abrow b{color:#e8e8e8;font-weight:600}
+    .abrow.hl{border-top:1px dashed var(--line-hard);margin-top:5px;padding-top:7px}
+    .abrow.hl b{color:var(--accent-lt);font-size:15px}
+    .ab-note{font-size:11.5px;color:#8a8a8a;margin-top:10px;line-height:1.5}
+    @media(max-width:560px){.abgrid{grid-template-columns:1fr}}
     /* filtro por data (análise + feed) */
     .ana-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .dt-in{font-size:12px;padding:5px 7px;border-radius:8px;border:1px solid var(--line-hard);background:#161616;color:#cfcfcf;color-scheme:dark;font-family:inherit;cursor:pointer}
@@ -863,6 +879,30 @@
         <div class="ana-foot">
           <span class="ana-base">Cards de cima = pedidos no período · gráfico = sessões rastreadas desde a página de venda (bases diferentes).</span>
           <span class="ana-meta"><span class="live-dot ana-livedot"></span>atualizado <b id="anaAgo">agora</b> · metrificando desde <b id="anaSince">—</b></span>
+        </div>
+        <div class="abwrap" id="abWrap" hidden>
+          <h4>🧪 A/B Checkout · Cakto × Yampi <span class="ab-since" id="abSince"></span></h4>
+          <div class="abgrid">
+            <div class="abcol" id="abCakto">
+              <div class="gw">🟦 Cakto</div>
+              <div class="abrow"><span>Mandados</span><b id="cAssigned">–</b></div>
+              <div class="abrow"><span>Vendas</span><b id="cPaid">–</b></div>
+              <div class="abrow"><span>Recuperação (Pix)</span><b id="cRec">–</b></div>
+              <div class="abrow"><span>Conversão</span><b id="cConv">–</b></div>
+              <div class="abrow"><span>Ticket médio</span><b id="cTicket">–</b></div>
+              <div class="abrow hl"><span>R$ / visitante</span><b id="cRpv">–</b></div>
+            </div>
+            <div class="abcol" id="abYampi">
+              <div class="gw">🟩 Yampi <small>(MP + bumps)</small></div>
+              <div class="abrow"><span>Mandados</span><b id="yAssigned">–</b></div>
+              <div class="abrow"><span>Vendas</span><b id="yPaid">–</b></div>
+              <div class="abrow"><span>Recuperação (Pix)</span><b id="yRec">–</b></div>
+              <div class="abrow"><span>Conversão</span><b id="yConv">–</b></div>
+              <div class="abrow"><span>Ticket médio</span><b id="yTicket">–</b></div>
+              <div class="abrow hl"><span>R$ / visitante</span><b id="yRpv">–</b></div>
+            </div>
+          </div>
+          <div class="ab-note" id="abNote"></div>
         </div>`;
       anaBuilt=true;
     }
@@ -902,6 +942,36 @@
       anaLastUpdate=Date.now(); updateAnaAgo();
     }
 
+    const AB_MIN_N=10; // amostra mínima por lado antes de cravar vencedor
+    function paintAB(d){
+      const ab=d&&d.ab, w=$('abWrap'); if(!w)return;
+      if(!ab){ w.hidden=true; return; }
+      w.hidden=false;
+      const set=(id,v)=>{const e=$(id); if(e)e.textContent=v;};
+      const money=v=>v==null?'–':('R$ '+Number(v).toFixed(2).replace('.',','));
+      const pct=v=>v==null?'–':(v+'%');
+      const c=ab.cakto||{}, y=ab.yampi||{};
+      set('cAssigned',c.assigned||0); set('cPaid',c.paid||0); set('cRec',c.recuperacao||0); set('cConv',pct(c.conversion)); set('cTicket',money(c.ticket)); set('cRpv',money(c.rev_per_visitor));
+      set('yAssigned',y.assigned||0); set('yPaid',y.paid||0); set('yRec',y.recuperacao||0); set('yConv',pct(y.conversion)); set('yTicket',money(y.ticket)); set('yRpv',money(y.rev_per_visitor));
+      $('abCakto').classList.remove('win'); $('abYampi').classList.remove('win');
+      document.querySelectorAll('.win-tag').forEach(t=>t.remove());
+      const cv=c.rev_per_visitor||0, yv=y.rev_per_visitor||0;
+      let note;
+      if((c.assigned||0)<AB_MIN_N||(y.assigned||0)<AB_MIN_N){
+        note='⏳ Amostra ainda pequena (ideal ~'+AB_MIN_N+'+ visitantes por lado). Deixe rodar antes de decidir.';
+      } else if(Math.abs(cv-yv)<0.01){
+        note='Empate técnico em R$/visitante. Continue coletando.';
+      } else {
+        const winId=yv>cv?'abYampi':'abCakto', winName=yv>cv?'Yampi':'Cakto';
+        $(winId).classList.add('win');
+        const tag=document.createElement('span'); tag.className='win-tag'; tag.textContent='🏆 na frente'; $(winId).appendChild(tag);
+        const diff=Math.abs(yv-cv)/Math.max(0.01,Math.min(cv,yv))*100;
+        note='🏆 <b>'+winName+'</b> está faturando ~'+diff.toFixed(0)+'% mais por visitante. Com volume suficiente, pode virar 100% pra ele.';
+      }
+      const n=$('abNote'); if(n)n.innerHTML=note;
+      const s=$('abSince'); if(s)s.textContent='· desde 24/06 (início do teste)';
+    }
+
     function updateAnaAgo(){
       const el=$('anaAgo'); if(!el||!anaLastUpdate)return;
       const s=Math.round((Date.now()-anaLastUpdate)/1000);
@@ -911,11 +981,17 @@
 
     // monta os params da análise a partir do range escolhido (from/to ISO); vazio = Tudo
     function anaParams(){ const {fromISO,toISO}=dateBounds(ANA_FROM,ANA_TO); if(!fromISO&&!toISO) return {period:'tudo'}; const p={}; if(fromISO)p.from=fromISO; if(toISO)p.to=toISO; return p; }
+    // A/B só existe a partir do deploy do teste; nunca contar antes (senão vendas antigas inflam a Cakto)
+    const AB_START='2026-06-24T17:55:00.000Z';
+    function abParams(){ const p=anaParams(); const out={}; if(p.to)out.to=p.to; out.from=(p.from&&p.from>AB_START)?p.from:AB_START; return out; }
     // reflete ANA_FROM/ANA_TO nos inputs + destaca o preset correspondente
     function syncAnaControls(){ const F=$('anaFrom'),T=$('anaTo'); if(F)F.value=ANA_FROM; if(T)T.value=ANA_TO; const k=detectPreset(ANA_FROM,ANA_TO); document.querySelectorAll('#analytics .ana-periods .p').forEach(p=>p.classList.toggle('on',p.dataset.preset===k)); }
     async function refreshAnalytics(silent){
       if(silent&&document.hidden)return;
-      try{ const d=await api('analytics',anaParams()); paintFunnel(d); setAnaLive(false); }
+      try{
+        const d=await api('analytics',anaParams()); paintFunnel(d); setAnaLive(false);
+        try{ const a=await api('ab',abParams()); paintAB(a); }catch(_e){/* A/B é complementar; não quebra a análise */}
+      }
       catch(e){
         if(e&&e.code===401){stopAnaAuto();handleErr(e);return}
         if(!anaBuilt)$('funnelView').innerHTML='<div class="ana-loading">Erro ao carregar a análise.'+(e&&e.detail?' '+esc(e.detail):'')+'</div>';
