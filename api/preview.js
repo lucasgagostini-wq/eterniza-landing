@@ -151,10 +151,18 @@ module.exports = async (req, res) => {
   if (provider === 'gemini' && !GEMINI_KEY) return res.status(500).json({ error: 'gemini_key_missing' });
 
   const photoUrl = (q.foto || q.photoUrl || q.url || body.foto || body.photoUrl || body.url || '').toString().trim();
-  if (!photoUrl) return res.status(400).json({ error: 'foto_missing' });
+  const fotoB64 = (body.fotoB64 || body.imageB64 || '').toString().trim();
+  if (!photoUrl && !fotoB64) return res.status(400).json({ error: 'foto_missing' });
 
   try {
-    const src = await fetchAsBase64(photoUrl);
+    // foto pode vir como URL (fetch) OU base64 direto no body (data: URL ou base64 cru)
+    let src;
+    if (fotoB64) {
+      const m = fotoB64.match(/^data:([^;]+);base64,(.+)$/);
+      src = m ? { base64: m[2], mime: m[1] } : { base64: fotoB64, mime: 'image/jpeg' };
+    } else {
+      src = await fetchAsBase64(photoUrl);
+    }
     const gen = provider === 'openrouter' ? await callOpenRouter(src.base64, src.mime) : await callGemini(src.base64, src.mime);
     const wm = await applyWatermark(gen.base64, gen.mime);
     const previewUrl = await uploadToStorage(wm.base64, wm.mime);
