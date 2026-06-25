@@ -40,10 +40,13 @@ async function callGemini(base64, mime) {
       { inlineData: { mimeType: mime, data: base64 } },
       { text: PROMPT },
     ] }],
-    generationConfig: { responseModalities: ['IMAGE'] },
+    generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '9:16' } },
   };
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_KEY}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  // Chave vai no header x-goog-api-key (as keys novas "AQ." NÃO funcionam mais com ?key= na URL).
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
+    body: JSON.stringify(body),
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error('gemini_http_' + r.status + ':' + JSON.stringify(j).slice(0, 280));
