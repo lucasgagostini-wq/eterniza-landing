@@ -616,12 +616,17 @@
 
       if(isRec){
         // ===== FORMATO RECUPERAÇÃO (não pago) — foto aparece aqui (uma vez) =====
-        const foto=o.photo_url?`<img class="photo" data-photo="${esc(o.photo_url)}" src="${esc(o.photo_url)}" alt="foto" style="max-width:120px">`:`<div class="photo ph" style="max-width:120px">🖼️</div>`;
+        const foto=o.photo_url?`<img class="photo" data-photo="${esc(o.photo_url)}" draggable="true" src="${esc(o.photo_url)}" alt="foto" style="max-width:120px;cursor:grab">`:`<div class="photo ph" style="max-width:120px">🖼️</div>`;
         const rc=o.recovery_contact_status||'nao_contatado';
         html+=`<div class="section"><div class="sh"><span class="st">Dados coletados</span></div><div class="sb">
             <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
               <div style="flex:0 0 auto">${foto}</div>
               <div style="min-width:200px;flex:1">${homage}</div>
+            </div>
+            <div class="msgrow" style="margin-top:10px">
+              <button class="btn sm primary" data-copybrief="${o.id}">📋 Copiar tudo pro GPT</button>
+              ${o.photo_url?`<button class="btn sm" data-cpphoto="${esc(o.photo_url)}">🖼️ Copiar imagem</button>`:''}
+              <a class="btn sm ghost" href="${GPT_AGENT_URL}" target="_blank" rel="noopener">🤖 Agente GPT ↗</a>
             </div>
             ${contato}
           </div></div>
