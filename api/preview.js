@@ -2,6 +2,7 @@
 // hospeda no Supabase Storage e devolve a URL pública. Chamado pelo bot logo após a foto.
 // Auth por ?token= (= PREVIEW_TOKEN | CAKTO_SECRET) p/ não deixar qualquer um gastar a API.
 const { SB, KEY } = require('./_lib');
+let sharp = null; try { sharp = require('sharp'); } catch (e) { /* sem sharp: sobe imagem limpa */ }
 
 // Provedor de imagem: usa OpenRouter se a chave existir (pré-pago avulso, sem mínimo de R$200 do Google),
 // senão cai pro Gemini direto. Ambos chamam o MESMO modelo (nano-banana / gemini-2.5-flash-image).
@@ -114,6 +115,25 @@ async function uploadToStorage(base64, mime) {
   return `${SB}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
+// Carimba "PRÉVIA ETERNIZA" DENTRO da imagem (igual o RevivaPic) compondo um PNG pré-renderizado
+// (gerado no PC com fonte garantida) — assim NÃO depende de fonte no servidor da Vercel.
+// Sem sharp / sem marca / erro? devolve a imagem limpa (a prévia nunca quebra por causa do carimbo).
+const WM_PNG = (() => { try { return Buffer.from(require('./_watermark'), 'base64'); } catch (e) { return null; } })();
+async function applyWatermark(base64, mime) {
+  if (!sharp || !WM_PNG) return { base64, mime };
+  try {
+    const input = Buffer.from(base64, 'base64');
+    const meta = await sharp(input).metadata();
+    const W = meta.width || 768, H = meta.height || 1365;
+    const wm = await sharp(WM_PNG).resize(W, H, { fit: 'fill' }).toBuffer();
+    const out = await sharp(input).composite([{ input: wm }]).png().toBuffer();
+    return { base64: out.toString('base64'), mime: 'image/png' };
+  } catch (e) {
+    console.log('[preview] watermark falhou, subindo imagem limpa:', String(e && e.message || e).slice(0, 120));
+    return { base64, mime };
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
   const q = req.query || {};
@@ -136,7 +156,8 @@ module.exports = async (req, res) => {
   try {
     const src = await fetchAsBase64(photoUrl);
     const gen = provider === 'openrouter' ? await callOpenRouter(src.base64, src.mime) : await callGemini(src.base64, src.mime);
-    const previewUrl = await uploadToStorage(gen.base64, gen.mime);
+    const wm = await applyWatermark(gen.base64, gen.mime);
+    const previewUrl = await uploadToStorage(wm.base64, wm.mime);
     console.log('[preview] ok (' + provider + ') ->', previewUrl);
     return res.status(200).json({ ok: true, previewUrl, provider });
   } catch (e) {
