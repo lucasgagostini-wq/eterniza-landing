@@ -4,6 +4,7 @@
 // ir-checkout.html). Assim casa com o lead mesmo que o cliente digite outro número no checkout.
 // Auth por ?token= (= YAMPI_TOKEN | CAKTO_SECRET) na URL cadastrada na Yampi.
 const { normalizePhone, pick, getByPath, upsertOrder, sendMetaPurchase } = require('./_lib');
+const discord = require('./_discord');
 
 // evento/status do Yampi -> status interno. order.paid = pago; order.created/waiting = pix gerado.
 function detectYampiStatus(ev, st) {
@@ -83,10 +84,10 @@ module.exports = async (req, res) => {
       if ((RANK[o.status] ?? 0) >= (RANK[status] ?? 0)) { delete patch.status; delete patch.pix_generated_at; }
       await o.update(patch);
     }
-    // CAPI: venda PAGA -> Purchase server-side pro Meta (atribuição cross-domain via fbp/fbc do metadata)
-    let capiResult;
+    const orderId = pick(r.id, body.id, getByPath(r, 'data.id'), getByPath(body, 'resource.id'));
+    let capiResult, discordResult;
     if (detected === 'pago') {
-      const orderId = pick(r.id, body.id, getByPath(r, 'data.id'), getByPath(body, 'resource.id'));
+      // CAPI: Purchase server-side pro Meta (atribuição cross-domain via fbp/fbc do metadata)
       capiResult = await sendMetaPurchase({
         value: valor, email, phone: phoneRaw,
         fbp: pick(meta.fbp, getByPath(r, 'metadata.fbp')),
@@ -95,8 +96,12 @@ module.exports = async (req, res) => {
         eventSourceUrl: 'https://eternizamemori.site/',
       });
       console.log('[yampi-webhook] capi', JSON.stringify(capiResult));
+      // Discord: pinga o celular na hora que a venda cai
+      discordResult = await discord.notifyVendaAprovada({ valor, nome: name, phone: phoneRaw, email, gateway: 'Yampi', orderId });
+    } else if (detected === 'recuperacao_pix') {
+      discordResult = await discord.notifyPixGerado({ valor, nome: name, phone: phoneRaw, email, gateway: 'Yampi', orderId });
     }
-    return res.status(200).json({ ok: true, capi: req.query.debug ? (capiResult || null) : undefined });
+    return res.status(200).json({ ok: true, capi: req.query.debug ? (capiResult || null) : undefined, discord: req.query.debug ? (discordResult || null) : undefined });
   } catch (e) {
     return res.status(500).json({ error: 'upsert_failed', detail: String(e.message || e).slice(0, 300) });
   }
