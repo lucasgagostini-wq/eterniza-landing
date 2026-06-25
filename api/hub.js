@@ -297,6 +297,17 @@ module.exports = async (req, res) => {
       return res.status(200).json({ rows });
     }
 
+    // teste do Discord (admin): dispara as 2 notificações reais (pix gerado + venda aprovada) SEM
+    // tocar no banco nem no CAPI. ?only=pix dispara só o pix (sem pingar Davi/Folha). Retorna status+canal.
+    if (action === 'discord_test') {
+      const discord = require('./_discord');
+      const only = (req.query.only || '').toString();
+      const sample = { valor: 49.9, nome: '🧪 TESTE (pode ignorar)', phone: '5511999990000', email: 'teste@eterniza.com', gateway: 'Yampi (teste)', orderId: 'TESTE-DISCORD' };
+      const pix_gerado = await discord.notifyPixGerado(sample); // 🧾 azul, NÃO pinga
+      const venda_aprovada = (only === 'pix') ? { skipped: 'only=pix' } : await discord.notifyVendaAprovada(sample); // 🔥 laranja, PINGA Davi+Folha
+      return res.status(200).json({ ok: true, webhook_configurado: !!process.env.DISCORD_WEBHOOK_URL, pix_gerado, venda_aprovada });
+    }
+
     return res.status(400).json({ error: 'unknown_action' });
   } catch (e) {
     return res.status(500).json({ error: 'server_error', detail: String(e.message || e).slice(0, 300) });
