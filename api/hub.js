@@ -1,15 +1,37 @@
 // Backend do Delivery Hub — Eterniza. Protegido por token (ADMIN_TOKEN ou CAKTO_SECRET).
-const { sbSelect, sbUpdate, sbInsert, sbDelete, normalizePhone } = require('./_lib');
+const { sbSelect, sbUpdate, sbInsert, sbDelete, normalizePhone, SB, KEY } = require('./_lib');
 
 const STATUSES = ['briefing_recebido', 'checkout_iniciado', 'recuperacao_pix', 'pago', 'fila_edicao', 'produzindo', 'pronta', 'entregue', 'erro'];
 const RECOVERY = ['nao_contatado', 'contatado', 'sem_resposta', 'convertido', 'descartado'];
-const COLS = 'id,created_at,updated_at,customer_name,customer_email,customer_phone,phone_normalized,recipient_name,relationship,memory,photo_url,video_url,delivery_message,delivered_at,valor,payment_status,status,pix_generated_at,recovery_ready,recovery_contact_status,recovery_notes,typebot_payload';
+const COLS = 'id,created_at,updated_at,customer_name,customer_email,customer_phone,phone_normalized,recipient_name,relationship,memory,photo_url,photos,video_url,delivery_message,delivered_at,valor,payment_status,status,pix_generated_at,recovery_ready,recovery_contact_status,recovery_notes,typebot_payload';
 
 // Anti-bruteforce: 3 senhas erradas por IP -> trava 30s. In-memory (por instância serverless);
 // só conta tentativa ERRADA — login certo e o auto-refresh (token válido) nunca disparam o bloqueio.
 const FAILS = new Map(); // ip -> { n, windowStart, lockedUntil }
 const MAX_FAILS = 3, LOCK_MS = 30000, WINDOW_MS = 60000;
 const clientIp = (req) => ((req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim()) || (req.socket && req.socket.remoteAddress) || 'unknown';
+
+// ---- Galeria de fotos do lead (Feature B) — sobe no bucket público 'previas' (mesmo do preview.js) ----
+const PHOTO_BUCKET = 'previas';
+const SBH = (extra) => ({ apikey: KEY, Authorization: `Bearer ${KEY}`, ...(extra || {}) });
+async function ensurePhotoBucket() {
+  await fetch(`${SB}/storage/v1/bucket`, {
+    method: 'POST', headers: SBH({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ id: PHOTO_BUCKET, name: PHOTO_BUCKET, public: true }),
+  }).catch(() => {});
+}
+async function uploadLeadPhoto(base64, mime) {
+  const ext = (String(mime).split('/')[1] || 'jpg').replace('jpeg', 'jpg').replace('+xml', '');
+  const path = `lead-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const bytes = Buffer.from(base64, 'base64');
+  const put = () => fetch(`${SB}/storage/v1/object/${PHOTO_BUCKET}/${path}`, {
+    method: 'POST', headers: SBH({ 'Content-Type': mime, 'x-upsert': 'true' }), body: bytes,
+  });
+  let up = await put();
+  if (up.status === 404 || up.status === 400) { await ensurePhotoBucket(); up = await put(); }
+  if (!up.ok) throw new Error('storage_' + up.status + ':' + (await up.text()).slice(0, 180));
+  return `${SB}/storage/v1/object/public/${PHOTO_BUCKET}/${path}`;
+}
 
 module.exports = async (req, res) => {
   const ADMIN = (process.env.ADMIN_TOKEN || process.env.CAKTO_SECRET || '').trim();
@@ -138,6 +160,48 @@ module.exports = async (req, res) => {
       if (!id) return res.status(400).json({ error: 'bad_params' });
       await sbUpdate('orders', `id=eq.${encodeURIComponent(id)}`, { video_url: video_url || null });
       return res.status(200).json({ ok: true });
+    }
+    // ---- Galeria de fotos (Feature B): anexa, remove e define capa. NUNCA perde foto antiga. ----
+    // add_photo: recebe a imagem (data-URL base64 no body) -> sobe no Storage -> ANEXA no array `photos`.
+    if (action === 'add_photo') {
+      let b = req.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
+      if (!id || !b || typeof b !== 'object') return res.status(400).json({ error: 'bad_params' });
+      const dataUrl = (b.image || b.photo || b.fotoB64 || '').toString();
+      const m = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      const base64 = m ? m[2] : dataUrl;
+      const mime = m ? m[1] : 'image/jpeg';
+      if (!base64) return res.status(400).json({ error: 'image_missing' });
+      let url;
+      try { url = await uploadLeadPhoto(base64, mime); }
+      catch (e) { return res.status(500).json({ error: 'upload_failed', detail: String(e.message || e).slice(0, 200) }); }
+      const cur = await sbSelect(`orders?id=eq.${encodeURIComponent(id)}&select=photos,photo_url&limit=1`);
+      const row = (Array.isArray(cur) && cur[0]) || {};
+      const photos = Array.isArray(row.photos) ? row.photos.slice() : [];
+      photos.push(url);
+      const patch = { photos };
+      if (!row.photo_url) patch.photo_url = url; // 1ª foto vira a capa (compat com quem lê photo_url)
+      await sbUpdate('orders', `id=eq.${encodeURIComponent(id)}`, patch);
+      return res.status(200).json({ ok: true, url, photos, photo_url: patch.photo_url || row.photo_url || null });
+    }
+    // del_photo: tira a foto do array (NÃO apaga do Storage — barato e reversível). Promove a capa se preciso.
+    if (action === 'del_photo') {
+      let b = req.body; if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
+      const url = (req.query.url || (b && b.url) || '').toString();
+      if (!id || !url) return res.status(400).json({ error: 'bad_params' });
+      const cur = await sbSelect(`orders?id=eq.${encodeURIComponent(id)}&select=photos,photo_url&limit=1`);
+      const row = (Array.isArray(cur) && cur[0]) || {};
+      const photos = (Array.isArray(row.photos) ? row.photos : []).filter(u => u !== url);
+      const patch = { photos };
+      if (row.photo_url === url) patch.photo_url = photos[0] || null; // deletou a capa -> promove a próxima
+      await sbUpdate('orders', `id=eq.${encodeURIComponent(id)}`, patch);
+      return res.status(200).json({ ok: true, photos, photo_url: ('photo_url' in patch) ? patch.photo_url : (row.photo_url || null) });
+    }
+    // set_main_photo: define qual foto é a capa (photo_url) — a usada no briefing/produção/entrega.
+    if (action === 'set_main_photo') {
+      const url = (req.query.url || '').toString();
+      if (!id || !url) return res.status(400).json({ error: 'bad_params' });
+      await sbUpdate('orders', `id=eq.${encodeURIComponent(id)}`, { photo_url: url });
+      return res.status(200).json({ ok: true, photo_url: url });
     }
     if (action === 'recovery') {
       const rc = (req.query.recovery_contact_status || '').toString();

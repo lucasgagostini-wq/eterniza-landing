@@ -127,6 +127,22 @@
 
     .photo{width:100%;aspect-ratio:1;max-width:150px;object-fit:cover;border-radius:12px;border:1px solid var(--line-hard);cursor:pointer;background:#0f0f0f}
     .photo.ph{display:grid;place-items:center;color:#444;font-size:30px;cursor:default}
+    /* Galeria de fotos do lead (Feature B): carrossel + arrastar-soltar */
+    .gallery{display:flex;flex-direction:column;gap:7px;width:100%}
+    .galframe{position:relative;width:100%;border-radius:12px;overflow:hidden;line-height:0}
+    .galframe .photo{max-width:none;width:100%;border-radius:12px;display:block}
+    .galframe.drop{outline:2px dashed var(--accent);outline-offset:-4px}
+    .galbtn{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:16px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0;z-index:2}
+    .galbtn:hover{background:rgba(0,0,0,.82)}
+    .galbtn.gprev{left:5px}.galbtn.gnext{right:5px}
+    .galcount{position:absolute;bottom:6px;right:7px;background:rgba(0,0,0,.62);color:#fff;font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:10px;line-height:1.6;z-index:2}
+    .galcover{position:absolute;top:6px;left:7px;background:rgba(0,0,0,.62);color:#fde68a;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:8px;line-height:1.4;z-index:2}
+    .galdrophint{position:absolute;inset:0;display:none;place-items:center;text-align:center;background:rgba(8,20,12,.86);color:var(--accent-lt);font-size:12px;font-weight:700;line-height:1.3;padding:8px;pointer-events:none;z-index:3}
+    .galframe.drop .galdrophint{display:grid}
+    .galtools{display:flex;gap:5px;flex-wrap:wrap;line-height:1}
+    .btn.xs{padding:4px 8px;font-size:11px;border-radius:8px;gap:4px}
+    .btn.xs.danger{color:var(--danger);border-color:rgba(248,113,113,.35)}
+    .btn.xs.danger:hover{background:var(--danger-soft)}
     .recip{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--gold-soft);line-height:1.2}
     .recip-rel{color:#9a9a9a;font-size:13px;margin-top:2px}
     .memory{font-style:italic;color:var(--fg2);font-size:13px;line-height:1.6;margin-top:12px;padding:10px 13px;background:#0f0f0f;border-left:2px solid var(--gold);border-radius:0 8px 8px 0}
@@ -510,6 +526,36 @@
       return `Nome\n${o.customer_name||'—'}\n\nE-mail\n${o.customer_email||'—'}\n\nCelular\n${tel||'—'}`;
     }
 
+    // ---- Galeria de fotos do lead (Feature B): carrossel + arrastar-soltar + capa + deletar ----
+    // gallery = capa (photo_url) + extras do array `photos`, sem repetir. NADA se perde (array só cresce).
+    function galleryList(o){
+      const out=[],seen=new Set();
+      for(const u of [o.photo_url,...(Array.isArray(o.photos)?o.photos:[])]){ if(u&&!seen.has(u)){seen.add(u);out.push(u)} }
+      return out;
+    }
+    const GAL_IDX={}; // o.id -> índice atual no carrossel (sobrevive ao re-render do detalhe)
+    function galIndex(o){const l=galleryList(o);let i=GAL_IDX[o.id]||0;if(i>=l.length)i=l.length?l.length-1:0;if(i<0)i=0;GAL_IDX[o.id]=i;return i}
+    function galPhoto(o){const l=galleryList(o);return l[galIndex(o)]||''}
+    function photoGallery(o,maxw){
+      const list=galleryList(o),i=galIndex(o),cur=list[i]||'',id=o.id,n=list.length;
+      const isCover=!!cur&&cur===o.photo_url;
+      const img=cur
+        ?`<img class="photo" data-photo="${esc(cur)}" draggable="true" src="${esc(cur)}" alt="foto" title="Clique p/ ampliar · arraste pro GPT">`
+        :`<div class="photo ph">🖼️</div>`;
+      const nav=n>1?`<button class="galbtn gprev" data-galnav="${id}|-1" title="Anterior">‹</button><button class="galbtn gnext" data-galnav="${id}|1" title="Próxima">›</button><span class="galcount">${i+1}/${n}</span>`:'';
+      const cover=isCover&&n>1?`<span class="galcover">★ capa</span>`:'';
+      return `<div class="gallery" style="max-width:${maxw||150}px">
+        <div class="galframe" data-galdrop="${id}">${img}${nav}${cover}<div class="galdrophint">📥 solte a(s) foto(s)</div></div>
+        <div class="galtools">
+          <button class="btn xs" data-galadd="${id}" title="Adicionar foto">＋ foto</button>
+          ${cur?`<button class="btn xs" data-cpphoto="${esc(cur)}" title="Copiar imagem">📋</button>`:''}
+          ${cur&&!isCover?`<button class="btn xs" data-galmain="${id}|${esc(cur)}" title="Tornar esta a capa">★ capa</button>`:''}
+          ${n>1?`<button class="btn xs danger" data-galdel="${id}|${esc(cur)}" title="Remover esta foto">🗑</button>`:''}
+        </div>
+        <input type="file" accept="image/*" data-galfile="${id}" multiple hidden>
+      </div>`;
+    }
+
     // ================= RENDER =================
     function counts(){const c={};FILTERS.forEach(f=>c[f.key]=ORDERS.filter(f.test).length);return c}
     function renderFilters(){
@@ -616,16 +662,16 @@
 
       if(isRec){
         // ===== FORMATO RECUPERAÇÃO (não pago) — foto aparece aqui (uma vez) =====
-        const foto=o.photo_url?`<img class="photo" data-photo="${esc(o.photo_url)}" draggable="true" src="${esc(o.photo_url)}" alt="foto" style="max-width:120px;cursor:grab">`:`<div class="photo ph" style="max-width:120px">🖼️</div>`;
+        const cur=galPhoto(o);
         const rc=o.recovery_contact_status||'nao_contatado';
         html+=`<div class="section"><div class="sh"><span class="st">Dados coletados</span></div><div class="sb">
             <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-              <div style="flex:0 0 auto">${foto}</div>
+              <div style="flex:0 0 auto">${photoGallery(o,130)}</div>
               <div style="min-width:200px;flex:1">${homage}</div>
             </div>
             <div class="msgrow" style="margin-top:10px">
               <button class="btn sm primary" data-copybrief="${o.id}">📋 Copiar tudo pro GPT</button>
-              ${o.photo_url?`<button class="btn sm" data-cpphoto="${esc(o.photo_url)}">🖼️ Copiar imagem</button>`:''}
+              ${cur?`<button class="btn sm" data-cpphoto="${esc(cur)}">🖼️ Copiar imagem</button>`:''}
               <a class="btn sm ghost" href="${GPT_AGENT_URL}" target="_blank" rel="noopener">🤖 Agente GPT ↗</a>
             </div>
             ${contato}
@@ -648,7 +694,7 @@
         // ===== FORMATO PRODUÇÃO / ENTREGA (pago) — foto aparece na produção (uma vez) =====
         const idx=FLOW.indexOf(o.status);
         const flow=FLOW.map((s,i)=>`<button class="${s===o.status?'cur':(i<idx&&idx>=0?'done':'')}" data-status="${o.id}|${s}">${FLOW_LBL[s]}</button>`).join('');
-        const purl=o.photo_url, rn=esc(o.recipient_name||''), memorial='Em memória de '+(o.recipient_name||''), ready=!!o.video_url;
+        const cur=galPhoto(o), rn=esc(o.recipient_name||''), memorial='Em memória de '+(o.recipient_name||''), ready=!!o.video_url;
         html+=`<div class="section"><div class="sh"><span class="st">Dados da homenagem</span></div><div class="sb">
             ${homage}
             ${contato}
@@ -656,9 +702,9 @@
           <div class="section" style="margin-top:14px"><div class="sh"><span class="st">Produção do vídeo</span></div><div class="sb stack">
             <div class="alert" style="background:var(--accent-soft);border:1px solid var(--accent-border);color:var(--accent-lt)"><span>🎬</span><span>Copie/arraste a foto pro <b>Diretor de Produção Eterniza</b> (agente GPT). Quando o vídeo ficar pronto, cole o link e vá pra entrega.</span></div>
             <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
-              ${purl?`<img class="photo" data-photo="${esc(purl)}" draggable="true" src="${esc(purl)}" alt="foto do homenageado" style="max-width:170px;cursor:grab">`:'<div class="photo ph">🖼️</div>'}
+              ${photoGallery(o,170)}
               <div style="flex:1;min-width:210px" class="stack">
-                ${purl?`<div class="msgrow" style="margin-top:0"><button class="btn sm primary" data-cpphoto="${esc(purl)}">📋 Copiar imagem</button><button class="btn sm" data-dlphoto="${esc(purl)}|${rn}">⬇ Baixar</button><a class="btn sm ghost" href="${esc(purl)}" target="_blank" rel="noopener">Abrir ↗</a><a class="btn sm" href="${GPT_AGENT_URL}" target="_blank" rel="noopener">🤖 Agente GPT ↗</a></div>`:'<div class="hint">⚠️ Sem foto enviada neste pedido.</div>'}
+                ${cur?`<div class="msgrow" style="margin-top:0"><button class="btn sm primary" data-cpphoto="${esc(cur)}">📋 Copiar imagem</button><button class="btn sm" data-dlphoto="${esc(cur)}|${rn}">⬇ Baixar</button><a class="btn sm ghost" href="${esc(cur)}" target="_blank" rel="noopener">Abrir ↗</a><a class="btn sm" href="${GPT_AGENT_URL}" target="_blank" rel="noopener">🤖 Agente GPT ↗</a></div>`:'<div class="hint">⚠️ Sem foto — arraste uma pro quadro ao lado ou use ＋ foto.</div>'}
                 <div><div class="ov" style="margin-bottom:4px">Texto do vídeo</div><div class="msgrow" style="margin-top:0"><input readonly value="${esc(memorial)}" style="flex:1;min-width:150px"><button class="btn sm" data-copytext="${esc(memorial)}">Copiar</button></div></div>
               </div>
             </div>
@@ -807,11 +853,35 @@
       const cbr=t.closest('[data-copybrief]'); if(cbr){const o=ORDERS.find(x=>x.id===cbr.dataset.copybrief);if(o){navigator.clipboard?.writeText(briefingText(o));toast('Briefing copiado ✓','ok')}return}
       const cbu=t.closest('[data-copybuyer]'); if(cbu){const o=ORDERS.find(x=>x.id===cbu.dataset.copybuyer);if(o){navigator.clipboard?.writeText(buyerText(o));toast('Dados do comprador copiados ✓','ok')}return}
 
+      // ---- Galeria de fotos (Feature B) ----
+      const gnav=t.closest('[data-galnav]'); if(gnav){const p=gnav.dataset.galnav.split('|'),id=p[0],dir=+p[1];const o=ORDERS.find(x=>x.id===id);if(o){const n=galleryList(o).length||1;GAL_IDX[id]=((GAL_IDX[id]||0)+dir+n)%n;selSig='';renderDetail()}return}
+      const gadd=t.closest('[data-galadd]'); if(gadd){const f=document.querySelector(`input[data-galfile="${gadd.dataset.galadd}"]`);if(f)f.click();return}
+      const gmain=t.closest('[data-galmain]'); if(gmain){const s=gmain.dataset.galmain,k=s.indexOf('|'),id=s.slice(0,k),url=s.slice(k+1);try{await api('set_main_photo',{id,url});const o=ORDERS.find(x=>x.id===id);if(o)o.photo_url=url;toast('Capa atualizada ✓','ok');selSig='';renderDetail()}catch(e){handleErr(e,'Falha')}return}
+      const gdel=t.closest('[data-galdel]'); if(gdel){const s=gdel.dataset.galdel,k=s.indexOf('|'),id=s.slice(0,k),url=s.slice(k+1);if(!url)return;if(!confirm('Remover esta foto da galeria? (as outras permanecem)'))return;try{const d=await api('del_photo',{id,url});const o=ORDERS.find(x=>x.id===id);if(o){o.photos=Array.isArray(d.photos)?d.photos:[];if('photo_url'in d)o.photo_url=d.photo_url}GAL_IDX[id]=0;toast('Foto removida','ok');selSig='';renderDetail()}catch(e){handleErr(e,'Falha')}return}
+
       const ed=t.closest('[data-edit]'); if(ed){editing=true;renderDetail();return}
       if(t.closest('[data-canceledit]')){editing=false;renderDetail();return}
       const sd=t.closest('[data-savedit]'); if(sd){await saveEdit(sd.dataset.savedit);return}
       const dl=t.closest('[data-del]'); if(dl){if(!confirm('Excluir este pedido definitivamente?'))return;try{await api('delete',{id:dl.dataset.del});toast('Excluído','ok');selId=null;editing=false;if(!isDesktop())document.body.classList.remove('viewing');await load()}catch(e){handleErr(e,'Falha')}return}
     });
+
+    // ---- Galeria (Feature B): arrastar-soltar + seletor de arquivo + redução no browser ----
+    async function uploadGalleryFile(id,file){
+      if(!file||!/^image\//.test(file.type||'')){toast('Arraste um arquivo de imagem','err');return}
+      try{
+        const dataUrl=await shrinkImage(file,1280,.85);
+        const d=await api('add_photo',{id},{method:'POST',body:{image:dataUrl}});
+        const o=ORDERS.find(x=>x.id===id);
+        if(o){o.photos=Array.isArray(d.photos)?d.photos:(o.photos||[]);if(d.photo_url)o.photo_url=d.photo_url;GAL_IDX[id]=Math.max(0,galleryList(o).length-1)}
+        selSig='';renderDetail();toast('Foto adicionada ✓','ok');
+      }catch(e){handleErr(e,'Falha ao enviar foto')}
+    }
+    // reduz no navegador (lado máx N) -> dataURL jpeg leve (upload rápido e abaixo do limite do serverless)
+    function shrinkImage(file,max,q){return new Promise((res,rej)=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight;if(w>max||h>max){const s=Math.min(max/w,max/h);w=Math.round(w*s);h=Math.round(h*s)}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img_load'))};img.src=u})}
+    document.addEventListener('dragover',ev=>{const z=ev.target.closest&&ev.target.closest('[data-galdrop]');if(z&&ev.dataTransfer&&[...(ev.dataTransfer.types||[])].includes('Files')){ev.preventDefault();z.classList.add('drop')}});
+    document.addEventListener('dragleave',ev=>{const z=ev.target.closest&&ev.target.closest('[data-galdrop]');if(z&&!z.contains(ev.relatedTarget))z.classList.remove('drop')});
+    document.addEventListener('drop',async ev=>{const z=ev.target.closest&&ev.target.closest('[data-galdrop]');if(!z)return;ev.preventDefault();z.classList.remove('drop');const id=z.dataset.galdrop,files=[...((ev.dataTransfer&&ev.dataTransfer.files)||[])].filter(f=>/^image\//.test(f.type||''));for(const f of files)await uploadGalleryFile(id,f)});
+    document.addEventListener('change',async ev=>{const fi=ev.target;if(fi.tagName==='INPUT'&&fi.type==='file'&&fi.dataset.galfile){const id=fi.dataset.galfile,files=[...(fi.files||[])];fi.value='';for(const f of files)await uploadGalleryFile(id,f)}});
 
     // mantém wa.me sincronizado se editar a mensagem
     document.addEventListener('input',ev=>{
