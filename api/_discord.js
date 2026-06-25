@@ -10,21 +10,32 @@ function fmtPhone(p) {
   return d.length === 11 ? `+55 (${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : String(p);
 }
 const nowSP = () => new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'America/Sao_Paulo' });
-const mention = () => { const id = process.env.DISCORD_USER_ID; return id ? `<@${id}>` : undefined; };
 
-// envio de baixo nível — fire-and-forget, swallow de erro; retorna status p/ debug
+// IDs a mencionar (pingam o celular). Padrão: Davi + Folha. Env DISCORD_USER_IDS (CSV) sobrescreve.
+// Davi + Folha (Lucas pediu os dois). DISCORD_USER_IDS (CSV) no env sobrescreve se quiser mudar sem deploy.
+const MENTION_IDS = (process.env.DISCORD_USER_IDS || '1080635336234909787,478692196178984960')
+  .split(',').map((s) => s.trim()).filter(Boolean);
+const mention = () => (MENTION_IDS.length ? MENTION_IDS.map((id) => `<@${id}>`).join(' ') : undefined);
+
+// envio de baixo nível — fire-and-forget, swallow de erro; ?wait=true retorna channel_id (debug) +
+// allowed_mentions garante que a menção REALMENTE pingue (webhook não pinga sem isso).
 async function send(embed, opts) {
   const url = process.env.DISCORD_WEBHOOK_URL;
   if (!url) return { skipped: 'no_webhook_url' };
   const m = opts && opts.mention ? mention() : undefined;
   try {
-    const r = await fetch(url, {
+    const r = await fetch(url + (url.includes('?') ? '&' : '?') + 'wait=true', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...(m ? { content: m } : {}), embeds: [{ timestamp: new Date().toISOString(), ...embed }] }),
+      body: JSON.stringify({
+        ...(m ? { content: m, allowed_mentions: { users: MENTION_IDS } } : {}),
+        embeds: [{ timestamp: new Date().toISOString(), ...embed }],
+      }),
       signal: AbortSignal.timeout(6000),
     });
-    return { ok: r.ok, status: r.status };
+    let info = {};
+    try { const j = await r.json(); info = { channelId: j.channel_id, messageId: j.id }; } catch (e) {}
+    return { ok: r.ok, status: r.status, ...info };
   } catch (e) { console.error('[discord] falhou', String((e && e.message) || e)); return { ok: false, error: String((e && e.message) || e).slice(0, 150) }; }
 }
 
