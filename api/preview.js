@@ -136,14 +136,29 @@ async function applyWatermark(base64, mime) {
   }
 }
 
+// Libera a página homenagem.html (mesmo domínio) SEM expor o segredo: checa Origin/Referer.
+const ALLOWED_HOSTS = ['eternizamemori.site', 'eterniza-memorias.vercel.app', 'localhost', '127.0.0.1'];
+function reqOriginHost(req) {
+  try { const o = req.headers.origin || req.headers.referer || ''; return o ? new URL(o).hostname.toLowerCase() : ''; }
+  catch (e) { return ''; }
+}
+function originAllowed(h) { return !!h && ALLOWED_HOSTS.some(d => h === d || h.endsWith('.' + d)); }
+
 module.exports = async (req, res) => {
+  // CORS p/ a página chamar do nosso domínio (e localhost no teste)
+  const allowOrigin = originAllowed(reqOriginHost(req));
+  if (req.headers.origin && allowOrigin) { res.setHeader('Access-Control-Allow-Origin', req.headers.origin); res.setHeader('Vary', 'Origin'); }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
   const q = req.query || {};
   let body = req.body; if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
   body = body || {};
 
+  // auth: segredo (bot/interno) OU origem permitida (página pública do nosso domínio)
   const sent = (q.token || body.token || '').toString().trim();
-  if (!TOKEN || sent !== TOKEN) return res.status(401).json({ error: 'unauthorized' });
+  if (!(TOKEN && sent === TOKEN) && !allowOrigin) return res.status(401).json({ error: 'unauthorized' });
   if (!OPENROUTER_KEY && !GEMINI_KEY) return res.status(500).json({ error: 'image_provider_key_missing' });
   if (!SB || !KEY) return res.status(500).json({ error: 'supabase_env_missing' });
 

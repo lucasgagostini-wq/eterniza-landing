@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Eterniza · Crie sua homenagem</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ivory:#f7f3ec; --card:#fffdf9; --ink:#2a2622; --muted:#6f675d;
+    --gold:#c9a24b; --gold-d:#a9842f; --line:#ece3d4; --green:#1f9d57;
+    --shadow:0 18px 50px rgba(60,45,20,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--ivory);color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .serif{font-family:"Playfair Display",Georgia,serif}
+  .wrap{max-width:560px;margin:0 auto;padding:0 20px}
+  .step{display:none;animation:fade .5s ease both}
+  .step.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  h1,h2,h3{margin:0 0 .4em;font-weight:600;line-height:1.18}
+  h1{font-size:30px} h2{font-size:23px} p{margin:0 0 1em}
+  .center{text-align:center} .muted{color:var(--muted)} .small{font-size:13px}
+  /* botões */
+  .btn{display:block;width:100%;border:0;border-radius:14px;padding:17px 20px;font-size:17px;font-weight:700;
+    cursor:pointer;font-family:inherit;transition:transform .12s,box-shadow .2s;text-decoration:none;text-align:center}
+  .btn-primary{background:linear-gradient(180deg,#d9b35f,#c0902f);color:#fff;box-shadow:0 10px 24px rgba(192,144,47,.4)}
+  .btn-primary:active{transform:translateY(1px)}
+  .btn-cta{background:linear-gradient(180deg,#26b466,#179049);color:#fff;box-shadow:0 12px 28px rgba(23,144,73,.4)}
+  .btn-ghost{background:transparent;color:var(--muted);box-shadow:none;font-weight:600;font-size:14px;padding:10px}
+  /* topo */
+  .topbar{padding:18px 0 10px;text-align:center}
+  .brand{font-family:"Playfair Display",serif;font-size:21px;font-weight:700;letter-spacing:.5px;color:var(--ink)}
+  .brand b{color:var(--gold-d)}
+  .progress{height:4px;background:var(--line);border-radius:4px;margin:8px auto 0;max-width:520px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,#d9b35f,#c0902f);transition:width .5s}
+  /* hero */
+  .hero{padding:24px 0 40px;text-align:center}
+  .hero .halo{width:120px;height:120px;margin:6px auto 18px;border-radius:50%;
+    background:radial-gradient(circle at 50% 35%,#fff,#f3e7c9 60%,#e7d3a3);
+    display:grid;place-items:center;font-size:54px;box-shadow:0 10px 30px rgba(201,162,75,.3)}
+  .stars{color:var(--gold-d);font-weight:700;font-size:14px;margin-top:14px}
+  .reassure{font-size:12.5px;color:var(--muted);margin-top:10px}
+  /* quiz */
+  .opt{display:flex;align-items:center;gap:12px;width:100%;background:var(--card);border:1.5px solid var(--line);
+    border-radius:14px;padding:16px;margin-bottom:11px;font-size:16px;font-weight:500;cursor:pointer;text-align:left;
+    font-family:inherit;color:var(--ink);transition:border-color .15s,background .15s,transform .1s}
+  .opt:hover{border-color:var(--gold)} .opt:active{transform:scale(.99)}
+  .opt .em{font-size:22px}
+  input[type=text],textarea{width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    padding:16px;font-size:16px;font-family:inherit;color:var(--ink)}
+  input[type=text]:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  textarea{min-height:104px;resize:vertical}
+  /* upload */
+  .drop{border:2px dashed #d8c79f;border-radius:18px;background:var(--card);padding:30px 20px;text-align:center;cursor:pointer}
+  .drop .ic{font-size:40px} .tip{background:#fbf4e2;border:1px solid #f0e2bf;border-radius:12px;padding:12px 14px;
+    font-size:13px;color:#7a6326;text-align:left;margin:14px 0}
+  /* loading */
+  .load{padding:60px 0;text-align:center}
+  .orb{width:118px;height:118px;margin:0 auto 26px;border-radius:50%;position:relative;
+    background:radial-gradient(circle at 50% 40%,#fff 0%,#f5e8c8 55%,#ecd9a8 100%);
+    box-shadow:0 0 0 0 rgba(201,162,75,.5);animation:pulse 1.8s ease-out infinite}
+  .orb::before{content:"🕊️";position:absolute;inset:0;display:grid;place-items:center;font-size:50px;animation:bob 2.4s ease-in-out infinite}
+  .ring{position:absolute;inset:-14px;border-radius:50%;border:2px solid transparent;border-top-color:var(--gold);animation:spin 1.1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(201,162,75,.45)}100%{box-shadow:0 0 0 34px rgba(201,162,75,0)}}
+  .load h2{margin-top:6px}
+  .loadmsg{color:var(--muted);min-height:22px;transition:opacity .3s}
+  .bar{height:7px;background:var(--line);border-radius:7px;max-width:300px;margin:18px auto 0;overflow:hidden}
+  .bar>i{display:block;height:100%;width:5%;background:linear-gradient(90deg,#d9b35f,#c0902f);transition:width .4s}
+  /* reveal */
+  .reveal-img{position:relative;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);max-width:330px;margin:0 auto;background:#eee}
+  .reveal-img img{display:block;width:100%}
+  .badge{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(20,16,12,.82);color:#f3e7c9;
+    font-size:11px;font-weight:700;letter-spacing:.6px;padding:6px 12px;border-radius:30px;white-space:nowrap}
+  .note{background:#fbf4e2;border:1px solid #f0e2bf;border-radius:14px;padding:14px 16px;font-size:14px;color:#6d5824;margin:18px 0}
+  /* oferta */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+  .inc{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px dashed var(--line)}
+  .inc:last-child{border-bottom:0} .inc .em{font-size:24px;line-height:1.1}
+  .inc b{display:block;font-size:15.5px} .inc span{font-size:13px;color:var(--muted)}
+  .price{text-align:center;margin:18px 0 6px}
+  .price .old{color:#b9b0a2;text-decoration:line-through;font-size:16px}
+  .price .now{font-family:"Playfair Display",serif;font-size:42px;font-weight:700;color:var(--ink);line-height:1}
+  .price .now small{font-size:18px;vertical-align:top}
+  .guarantee{display:flex;gap:10px;align-items:center;justify-content:center;font-size:13px;color:var(--muted);margin-top:12px}
+  .faq{border-top:1px solid var(--line);padding:15px 2px;cursor:pointer}
+  .faq b{font-size:15px} .faq p{margin:.5em 0 0;font-size:14px;color:var(--muted);display:none}
+  .faq.open p{display:block}
+  .foot{text-align:center;color:#aaa093;font-size:12px;padding:30px 0 40px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="topbar wrap">
+  <div class="brand">Eterniza<b>.</b></div>
+  <div class="progress"><i id="prog"></i></div>
+</div>
+
+<main class="wrap">
+
+  <!-- 0 · HERO -->
+  <section class="step active" data-step="0">
+    <div class="hero">
+      <div class="halo">🕊️</div>
+      <h1 class="serif">Reveja quem você ama<br>em paz, ao lado de Cristo</h1>
+      <p class="muted">Transforme uma foto de quem deixou saudade em uma homenagem que se vê, se ouve e se guarda — em <b>vídeo, com música</b>.</p>
+      <button class="btn btn-primary" onclick="go(1)">✨ Ver minha prévia grátis</button>
+      <div class="stars">⭐ 4,9 · +3.000 famílias já se emocionaram</div>
+      <div class="reassure">🔒 Grátis e sem compromisso · prévia em segundos</div>
+    </div>
+  </section>
+
+  <!-- 1 · PRA QUEM -->
+  <section class="step" data-step="1">
+    <div style="padding:18px 0 6px">
+      <h2 class="serif center">Pra quem é essa homenagem?</h2>
+      <p class="muted center small">Pra deixarmos tudo no jeitinho que essa pessoa merece.</p>
+      <div id="optsQuem" style="margin-top:18px"></div>
+      <button class="btn btn-ghost" onclick="go(0)">← voltar</button>
+    </div>
+  </section>
+
+  <!-- 2 · NOME -->
+  <section class="step" data-step="2">
+    <div style="padding:18px 0 6px">
+      <h2 class="serif center">Qual o nome dele(a)?</h2>
+      <p class="muted center small">Vamos personalizar a homenagem com o nome.</p>
+      <input id="nome" type="text" placeholder="Ex.: Dona Maria" autocomplete="off" style="margin:18px 0 12px" />
+      <button class="btn btn-primary" onclick="saveNome()">Continuar</button>
+      <button class="btn btn-ghost" onclick="go(1)">← voltar</button>
+    </div>
+  </section>
+
+  <!-- 3 · MEMÓRIA -->
+  <section class="step" data-step="3">
+    <div style="padding:18px 0 6px">
+      <h2 class="serif center">Uma lembrança que aquece o coração</h2>
+      <p class="muted center small">Pode ser um gesto, uma frase, um momento. (opcional)</p>
+      <textarea id="memoria" placeholder="Ex.: o cafézinho da tarde, o abraço apertado…" style="margin:18px 0 12px"></textarea>
+      <button class="btn btn-primary" onclick="go(4)">Continuar</button>
+      <button class="btn btn-ghost" onclick="go(4)">pular</button>
+    </div>
+  </section>
+
+  <!-- 4 · UPLOAD -->
+  <section class="step" data-step="4">
+    <div style="padding:18px 0 6px">
+      <h2 class="serif center">A foto que guarda esse momento</h2>
+      <p class="muted center small" id="upHint">Escolha a foto mais bonita dessa pessoa especial.</p>
+      <label class="drop" for="file" style="margin-top:16px">
+        <div class="ic">🖼️</div>
+        <div style="font-weight:700;margin-top:8px">Escolher foto da galeria</div>
+        <div class="small muted" style="margin-top:4px">toque para selecionar</div>
+      </label>
+      <input id="file" type="file" accept="image/*" class="hidden" onchange="onFile(event)" />
+      <div class="tip">💡 <b>Dica:</b> escolha uma foto com o rosto bem de frente e claro, sem muitas pessoas ao redor — assim a prévia fica perfeita.</div>
+      <p class="small muted center">🔒 Sua foto é tratada com o máximo de respeito e privacidade.</p>
+      <button class="btn btn-ghost" onclick="go(3)">← voltar</button>
+    </div>
+  </section>
+
+  <!-- 5 · LOADING -->
+  <section class="step" data-step="5">
+    <div class="load">
+      <div class="orb"><div class="ring"></div></div>
+      <h2 class="serif" id="loadTitle">Criando a prévia…</h2>
+      <div class="loadmsg" id="loadMsg">Recebendo a foto com carinho…</div>
+      <div class="bar"><i id="loadBar"></i></div>
+    </div>
+  </section>
+
+  <!-- 6 · REVELAÇÃO + OFERTA -->
+  <section class="step" data-step="6">
+    <div style="padding:14px 0 6px">
+      <h2 class="serif center" id="revTitle">A prévia da sua homenagem</h2>
+      <p class="muted center small">Imagine isso em vídeo, com música personalizada. 🎵</p>
+      <div class="reveal-img" style="margin-top:14px">
+        <div class="badge">PRIMEIROS TRAÇOS · ANTES DOS RETOQUES</div>
+        <img id="revImg" alt="Prévia da homenagem" />
+      </div>
+      <div class="note">✨ <b>Isso é só o começo.</b> Após a confirmação, nossa equipe finaliza cada detalhe do rosto, monta o <b>vídeo com música personalizada</b> e te entrega no <b>WhatsApp em até 24h</b>.</div>
+
+      <div class="card" style="margin-top:8px">
+        <h3 class="serif center" style="font-size:19px">Sua homenagem completa inclui</h3>
+        <div class="inc"><div class="em">🎞️</div><div><b>Vídeo da homenagem</b><span>o reencontro com Cristo, em movimento, com música acolhedora</span></div></div>
+        <div class="inc"><div class="em">🎵</div><div><b>Música personalizada</b><span>uma canção feita pra ela, com base na sua história</span></div></div>
+        <div class="inc"><div class="em">🤍</div><div><b>Arte com Cristo em alta</b><span>a imagem final retocada à mão, sem marca d'água</span></div></div>
+        <div class="inc"><div class="em">💬</div><div><b>Entrega no seu WhatsApp em 24h</b><span>com atendimento humano de verdade</span></div></div>
+
+        <div class="price">
+          <div class="old">de R$197,00</div>
+          <div class="now"><small>R$</small>49<small>,90</small></div>
+          <div class="small muted">pagamento único · Pix ou cartão</div>
+        </div>
+
+        <label class="small muted" for="zap" style="display:block;margin:8px 2px 6px">Seu WhatsApp (onde você recebe a homenagem):</label>
+        <input id="zap" type="text" inputmode="numeric" placeholder="(DD) 90000-0000" style="margin-bottom:12px" />
+        <button class="btn btn-cta" onclick="checkout()">Quero minha homenagem completa →</button>
+        <div class="guarantee">🛡️ Se não se emocionar, devolvemos 100%. Sem perguntas.</div>
+      </div>
+
+      <h3 class="serif center" style="margin-top:30px;font-size:20px">Dúvidas frequentes</h3>
+      <div class="faq" onclick="this.classList.toggle('open')"><b>Como vou receber minha homenagem?</b><p>No seu WhatsApp, em até 24h após o pagamento — o vídeo com música, prontinho pra compartilhar com a família.</p></div>
+      <div class="faq" onclick="this.classList.toggle('open')"><b>E se a foto for antiga ou estiver danificada?</b><p>Sem problema. Nossa equipe trata cada detalhe à mão — a prévia é só o primeiro traço.</p></div>
+      <div class="faq" onclick="this.classList.toggle('open')"><b>É seguro pagar?</b><p>Sim. O pagamento é feito em ambiente seguro, com Pix ou cartão, e você tem garantia total.</p></div>
+
+      <button class="btn btn-cta" style="margin-top:22px" onclick="checkout()">Quero minha homenagem completa →</button>
+      <div class="guarantee" style="margin-bottom:10px">🛡️ Garantia de emoção · entrega em 24h</div>
+    </div>
+  </section>
+
+  <div class="foot">Eterniza · feito à mão, com respeito e carinho 🕊️</div>
+</main>
+
+<script>
+  // ---- config ----
+  var API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? 'https://eternizamemori.site/api/preview'   // local: bate na API de produção (CORS liberado por origem)
+    : '/api/preview';                              // produção: same-origin
+  var CHECKOUT = 'https://eternizamemori.site/ir-checkout.html';
+  var TOTAL_STEPS = 6;
+
+  var state = { quem:'', nome:'', memoria:'', fotoB64:'', previewUrl:'', whatsapp:'' };
+
+  // ---- navegação ----
+  function go(n){
+    document.querySelectorAll('.step').forEach(function(s){ s.classList.toggle('active', +s.dataset.step === n); });
+    document.getElementById('prog').style.width = Math.round((n/TOTAL_STEPS)*100) + '%';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  // ---- quiz: pra quem ----
+  var QUEM = [
+    ['👩','Minha mãe'],['👨','Meu pai'],['👵','Minha avó'],['👴','Meu avô'],
+    ['💍','Meu esposo(a)'],['🧒','Meu filho(a)'],['🤍','Outra pessoa querida']
+  ];
+  (function(){
+    var box = document.getElementById('optsQuem');
+    QUEM.forEach(function(o){
+      var b = document.createElement('button');
+      b.className = 'opt'; b.innerHTML = '<span class="em">'+o[0]+'</span> '+o[1];
+      b.onclick = function(){ state.quem = o[1]; go(2); };
+      box.appendChild(b);
+    });
+  })();
+
+  function saveNome(){
+    var v = document.getElementById('nome').value.trim();
+    if(!v){ document.getElementById('nome').focus(); return; }
+    state.nome = v;
+    document.getElementById('upHint').textContent = 'Escolha a foto mais bonita de ' + v + '.';
+    document.getElementById('revTitle').textContent = 'A prévia da homenagem de ' + v;
+    go(3);
+  }
+
+  // ---- upload -> base64 ----
+  function onFile(e){
+    var f = e.target.files && e.target.files[0];
+    if(!f) return;
+    var rd = new FileReader();
+    rd.onload = function(){ state.fotoB64 = rd.result; gerar(); };
+    rd.readAsDataURL(f);
+  }
+
+  // ---- geração (chama /api/preview) ----
+  var MSGS = [
+    'Recebendo a foto com carinho…',
+    'Nossos artistas estão preparando o reencontro…',
+    'Criando a prévia da homenagem…',
+    'Vestindo de paz e luz…',
+    'Quase pronto. Preparando a revelação…'
+  ];
+  function gerar(){
+    go(5);
+    var i=0, pct=6;
+    var bar = document.getElementById('loadBar'), msg = document.getElementById('loadMsg');
+    bar.style.width = pct+'%';
+    var t = setInterval(function(){
+      i = (i+1) % MSGS.length; msg.textContent = MSGS[i];
+      pct = Math.min(92, pct + 7); bar.style.width = pct+'%';
+    }, 2600);
+
+    fetch(API, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ fotoB64: state.fotoB64, nome: state.nome, quem: state.quem })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      clearInterval(t);
+      if(!j || !j.previewUrl){ throw new Error(j && j.error || 'sem_previa'); }
+      state.previewUrl = j.previewUrl;
+      bar.style.width = '100%';
+      var img = document.getElementById('revImg');
+      img.onload = function(){ go(6); };
+      img.src = j.previewUrl;
+      setTimeout(function(){ if(document.querySelector('.step.active').dataset.step!=='6') go(6); }, 1200);
+    })
+    .catch(function(err){
+      clearInterval(t);
+      document.getElementById('loadTitle').textContent = 'Ops, tivemos um probleminha';
+      document.getElementById('loadMsg').innerHTML = 'Não rolou gerar a prévia agora. <a href="javascript:gerar()" style="color:var(--gold-d)">tentar de novo</a>';
+    });
+  }
+
+  // ---- checkout ----
+  function checkout(){
+    var zap = (document.getElementById('zap').value || '').replace(/\D/g,'');
+    state.whatsapp = zap;
+    var u = CHECKOUT + '?nome=' + encodeURIComponent(state.nome) + (zap ? '&phone=' + encodeURIComponent(zap) : '');
+    location.href = u;
+  }
+</script>
+</body>
+</html>
