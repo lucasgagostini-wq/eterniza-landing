@@ -62,10 +62,16 @@
       var nome = (q.get('nome') || q.get('name') || '').trim();
       var phone = (q.get('phone') || q.get('whatsapp') || '').replace(/\D/g, '');
       if (phone && phone.length <= 11) phone = '55' + phone;
+      // cookies do pixel (mesmo domínio da landing): _fbp/_fbc do clique do anúncio.
+      // Viajam via metadata -> voltam no webhook -> CAPI atribui a venda ao anúncio (cross-domain).
+      var ck = function (n) { var m = document.cookie.match('(?:^|; )' + n + '=([^;]*)'); return m ? decodeURIComponent(m[1]) : ''; };
+      var fbp = ck('_fbp'), fbc = ck('_fbc');
       var parts = [];
       if (g.mode === 'metadata') { // Yampi: metadata[chave]=valor -> volta no webhook order.*
         if (phone) parts.push('metadata[bot_phone]=' + encodeURIComponent(phone));
         if (nome) parts.push('metadata[bot_name]=' + encodeURIComponent(nome));
+        if (fbp) parts.push('metadata[fbp]=' + encodeURIComponent(fbp));
+        if (fbc) parts.push('metadata[fbc]=' + encodeURIComponent(fbc));
       } else {                     // Cakto: name/phone direto na query (pré-preenche o checkout)
         if (nome) parts.push('name=' + encodeURIComponent(nome));
         if (phone) parts.push('phone=' + encodeURIComponent(phone));

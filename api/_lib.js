@@ -1,5 +1,6 @@
 // Helpers compartilhados das funções serverless do Eterniza (Delivery Hub — Eterniza).
 // Arquivo começa com _ => o Vercel NÃO trata como rota, mas pode ser require()ado.
+const crypto = require('crypto');
 const SB = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SERVICE_KEY;
 
@@ -90,4 +91,44 @@ async function upsertOrder({ phone_normalized, email, fields, newStatus }) {
   return { existed: false };
 }
 
-module.exports = { SB, KEY, H, normalizePhone, phoneCandidates, getByPath, pick, firstOf, sbSelect, sbInsert, sbUpdate, sbDelete, detectCaktoStatus, upsertOrder };
+// ===== Meta Conversions API (CAPI) — Purchase server-side =====
+// Resolve a atribuição cross-domain (anúncio→landing→bot→checkout). O webhook
+// (que sabe a venda) manda o Purchase direto pro Meta, com match por email/telefone
+// (hash) + fbp/fbc (cookies do clique, repassados via metadata pela ponte ir-checkout).
+const sha256 = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
+const hashEmail = (e) => { e = e ? String(e).trim().toLowerCase() : ''; return e ? sha256(e) : undefined; };
+const hashPhone = (p) => { const d = String(p || '').replace(/\D/g, ''); return d ? sha256(d) : undefined; };
+
+async function sendMetaPurchase({ value, currency = 'BRL', email, phone, fbp, fbc, eventId, eventSourceUrl, eventTime }) {
+  const PIXEL = (process.env.META_PIXEL_ID || '1174240384548110').trim(); // pixel 110 (Eterniza)
+  const TOKEN = (process.env.META_CAPI_TOKEN || '').trim();
+  if (!TOKEN) return { skipped: 'no_token' }; // Lucas precisa setar META_CAPI_TOKEN no Vercel
+
+  const user_data = {};
+  const em = hashEmail(email); if (em) user_data.em = [em];
+  const ph = hashPhone(phone); if (ph) user_data.ph = [ph];
+  if (fbp) user_data.fbp = fbp; // _fbp cookie (navegador)
+  if (fbc) user_data.fbc = fbc; // _fbc cookie (clique do anúncio) — chave da atribuição
+
+  const payload = {
+    data: [{
+      event_name: 'Purchase',
+      event_time: eventTime || Math.floor(Date.now() / 1000),
+      action_source: 'website',
+      event_id: eventId || undefined, // dedup (se um dia o pixel client-side também disparar)
+      event_source_url: eventSourceUrl || 'https://eternizamemori.site/',
+      user_data,
+      custom_data: { currency, value: Number(value) || 0 },
+    }],
+  };
+  try {
+    const r = await fetch(`https://graph.facebook.com/v20.0/${PIXEL}/events?access_token=${encodeURIComponent(TOKEN)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(6000), // nunca trava o webhook
+    });
+    const body = (await r.text()).slice(0, 400);
+    return { ok: r.ok, status: r.status, body };
+  } catch (e) { return { ok: false, error: String(e.message || e).slice(0, 200) }; }
+}
+
+module.exports = { SB, KEY, H, normalizePhone, phoneCandidates, getByPath, pick, firstOf, sbSelect, sbInsert, sbUpdate, sbDelete, detectCaktoStatus, upsertOrder, sendMetaPurchase };

@@ -3,7 +3,7 @@
 // FUSÃO: prioriza o telefone do bot vindo em metadata.bot_phone (injetado pela ponte
 // ir-checkout.html). Assim casa com o lead mesmo que o cliente digite outro número no checkout.
 // Auth por ?token= (= YAMPI_TOKEN | CAKTO_SECRET) na URL cadastrada na Yampi.
-const { normalizePhone, pick, getByPath, upsertOrder } = require('./_lib');
+const { normalizePhone, pick, getByPath, upsertOrder, sendMetaPurchase } = require('./_lib');
 
 // evento/status do Yampi -> status interno. order.paid = pago; order.created/waiting = pix gerado.
 function detectYampiStatus(ev, st) {
@@ -82,6 +82,18 @@ module.exports = async (req, res) => {
       const RANK = { erro: 0, briefing_recebido: 1, checkout_iniciado: 2, recuperacao_pix: 2, pago: 3, fila_edicao: 4, produzindo: 5, pronta: 6, entregue: 7 };
       if ((RANK[o.status] ?? 0) >= (RANK[status] ?? 0)) { delete patch.status; delete patch.pix_generated_at; }
       await o.update(patch);
+    }
+    // CAPI: venda PAGA -> Purchase server-side pro Meta (atribuição cross-domain via fbp/fbc do metadata)
+    if (detected === 'pago') {
+      const orderId = pick(r.id, body.id, getByPath(r, 'data.id'), getByPath(body, 'resource.id'));
+      const capi = await sendMetaPurchase({
+        value: valor, email, phone: phoneRaw,
+        fbp: pick(meta.fbp, getByPath(r, 'metadata.fbp')),
+        fbc: pick(meta.fbc, getByPath(r, 'metadata.fbc')),
+        eventId: 'yampi_' + (orderId || (phone_normalized || '') + '_' + (valor || '')),
+        eventSourceUrl: 'https://eternizamemori.site/',
+      });
+      console.log('[yampi-webhook] capi', JSON.stringify(capi));
     }
     return res.status(200).json({ ok: true });
   } catch (e) {
