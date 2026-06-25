@@ -11,9 +11,10 @@ function fmtPhone(p) {
 }
 const nowSP = () => new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'America/Sao_Paulo' });
 
-// IDs a mencionar (pingam o celular). Padrão: Davi + Folha. Env DISCORD_USER_IDS (CSV) sobrescreve.
-// Davi + Folha (Lucas pediu os dois). DISCORD_USER_IDS (CSV) no env sobrescreve se quiser mudar sem deploy.
-const MENTION_IDS = (process.env.DISCORD_USER_IDS || '1080635336234909787,478692196178984960')
+// IDs a mencionar (pingam o celular). Padrão: Davi + Folha + Lucas (@agostini).
+// ⚠️ Se a env DISCORD_USER_IDS (CSV) estiver setada no Vercel, ela SOBRESCREVE este default
+// (então pra mudar a lista, ou edita aqui OU atualiza a env — não os dois pela metade).
+const MENTION_IDS = (process.env.DISCORD_USER_IDS || '1080635336234909787,478692196178984960,319574831576252436')
   .split(',').map((s) => s.trim()).filter(Boolean);
 const mention = () => (MENTION_IDS.length ? MENTION_IDS.map((id) => `<@${id}>`).join(' ') : undefined);
 
@@ -60,4 +61,4 @@ async function sendTest() {
   return send({ title: '🚀 TESTE — Eterniza', color: 0x00c06e, fields: [{ name: 'Status', value: '✅ Webhook Discord da Eterniza funcionando!' }, { name: 'Data', value: nowSP() }] }, { mention: true });
 }
 
-module.exports = { notifyVendaAprovada, notifyPixGerado, sendTest };
+module.exports = { notifyVendaAprovada, notifyPixGerado, sendTest, MENTION_IDS };

@@ -304,8 +304,8 @@ module.exports = async (req, res) => {
       const only = (req.query.only || '').toString();
       const sample = { valor: 49.9, nome: '🧪 TESTE (pode ignorar)', phone: '5511999990000', email: 'teste@eterniza.com', gateway: 'Yampi (teste)', orderId: 'TESTE-DISCORD' };
       const pix_gerado = await discord.notifyPixGerado(sample); // 🧾 azul, NÃO pinga
-      const venda_aprovada = (only === 'pix') ? { skipped: 'only=pix' } : await discord.notifyVendaAprovada(sample); // 🔥 laranja, PINGA Davi+Folha
-      return res.status(200).json({ ok: true, webhook_configurado: !!process.env.DISCORD_WEBHOOK_URL, pix_gerado, venda_aprovada });
+      const venda_aprovada = (only === 'pix') ? { skipped: 'only=pix' } : await discord.notifyVendaAprovada(sample); // 🔥 laranja, PINGA todos da lista
+      return res.status(200).json({ ok: true, webhook_configurado: !!process.env.DISCORD_WEBHOOK_URL, mention_ids: discord.MENTION_IDS, pix_gerado, venda_aprovada });
     }
 
     return res.status(400).json({ error: 'unknown_action' });
