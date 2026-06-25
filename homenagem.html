@@ -79,6 +79,13 @@
   .recebe{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-d);font-weight:700;text-align:center;margin-bottom:12px}
   .chk{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14.5px;color:var(--ink)}
   .chk:last-child{border-bottom:0} .chk .v{color:var(--green);font-weight:800;flex:0 0 auto}
+  .stk{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line)}
+  .si{display:flex;gap:11px;align-items:flex-start}
+  .si .se{font-size:21px;line-height:1.1;flex:0 0 auto}
+  .si b{display:block;font-size:14.5px;color:var(--ink)} .si span{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
+  .sv{font-size:13px;font-weight:700;color:var(--gold-d);white-space:nowrap;flex:0 0 auto;padding-top:2px}
+  .stktotal{text-align:center;font-size:14px;color:var(--body);margin-top:14px;font-weight:600}
+  .stktotal s{color:#bcb3a4;font-weight:400}
   .price{text-align:center;margin:18px 0 4px}
   .price .old{color:#bcb3a4;text-decoration:line-through;font-size:16px}
   .price .now{font-family:"Playfair Display",serif;font-size:44px;font-weight:800;color:var(--ink);line-height:1}
@@ -202,13 +209,15 @@
     <div class="reserva">🕯️ Sua vaga na fila de edição está reservada · entrega em até 24h</div>
     <div class="card">
       <h3 class="serif center" style="font-size:19px">Em 24h, sua homenagem chega<br>pronta no seu WhatsApp</h3>
-      <div class="recebe">O que você recebe em 24h</div>
-      <div class="chk"><span class="v">✓</span> Vídeo da homenagem com música acolhedora</div>
-      <div class="chk"><span class="v">✓</span> Música personalizada feita pra essa pessoa</div>
-      <div class="chk"><span class="v">✓</span> Edição feita por artistas humanos</div>
-      <div class="chk"><span class="v">✓</span> Atendimento e entrega direto no WhatsApp</div>
+      <div class="recebe">Tudo o que você garante hoje</div>
+      <div class="stk"><div class="si"><span class="se">🎬</span><div><b>Vídeo da homenagem</b><span>o reencontro com Cristo em movimento, com transições suaves</span></div></div><div class="sv">R$147</div></div>
+      <div class="stk"><div class="si"><span class="se">🎵</span><div><b>Música personalizada</b><span>uma canção feita pra essa pessoa, com a sua história</span></div></div><div class="sv">R$70</div></div>
+      <div class="stk"><div class="si"><span class="se">🖼️</span><div><b>Bônus: arte com Cristo em alta</b><span>a imagem final retocada, sem marca d'água, pra imprimir e guardar</span></div></div><div class="sv">R$40</div></div>
+      <div class="stk"><div class="si"><span class="se">✋</span><div><b>Edição à mão por artistas humanos</b><span>cada detalhe do rosto tratado com carinho</span></div></div><div class="sv">incluso</div></div>
+      <div class="stk"><div class="si"><span class="se">💬</span><div><b>Entrega e atendimento no WhatsApp</b><span>em até 24h, com gente de verdade</span></div></div><div class="sv">incluso</div></div>
+      <div class="stk"><div class="si"><span class="se">🛡️</span><div><b>Garantia de emoção (7 dias)</b><span>não emocionou, devolvemos 100%</span></div></div><div class="sv">incluso</div></div>
+      <div class="stktotal">Valor total <s>R$257</s> · hoje por apenas</div>
       <div class="price">
-        <div class="old">de R$197,00 por apenas</div>
         <div class="now"><small>R$</small>49<small>,90</small></div>
         <div class="small muted">pagamento único e 100% seguro</div>
       </div>
