@@ -17,27 +17,31 @@
     <div class="dbg" id="dbg"></div>
   </div>
   <script>
-    // Ponte bot -> checkout. TESTE A/B Cakto x Yampi (50/50).
+    // Ponte bot -> checkout. Gateway = YAMPI (Cakto pausada em 24/06 — Yampi venceu o A/B).
     // O telefone do bot viaja p/ o checkout (Cakto: query name/phone; Yampi: metadata[bot_phone]),
     // então o pedido do bot (com foto) FUNDE com o pagamento pelo phone_normalized no webhook.
-    // - Sorteio persistido (localStorage): a MESMA pessoa volta sempre pro mesmo gateway.
-    // - Beacon /api/track?step=go_cakto|go_yampi -> conta quantos foram pra cada lado (atribuição do A/B).
-    // - Override p/ QA: ?gw=cakto ou ?gw=yampi (força e NÃO conta no teste).
-    // - REVERTER o teste = mudar SPLIT_YAMPI p/ 0 (100% Cakto) e redeploy. 1 = 100% Yampi.
+    // - Beacon /api/track?step=go_cakto|go_yampi -> conta a atribuição por gateway.
+    // - Override p/ QA: ?gw=cakto ou ?gw=yampi (força e NÃO conta).
+    // - SPLIT_YAMPI: 1 = 100% Yampi · 0 = 100% Cakto · 0.5 = A/B 50/50 (persistido por visitante).
     (function () {
-      var SPLIT_YAMPI = 0.5; // fração do tráfego que vai pra YAMPI (0 = só Cakto; 1 = só Yampi)
+      var SPLIT_YAMPI = 1; // 1 = só Yampi · 0 = só Cakto · 0.5 = A/B (voltar Cakto = trocar aqui + redeploy)
       var CFG = {
         cakto: { url: 'https://pay.cakto.com.br/oqyboa5_932547', mode: 'query' },
         yampi: { url: 'https://eterniza.pay.yampi.com.br/r/E8VSH1ZWAB', mode: 'metadata' }
       };
       var q = new URLSearchParams(location.search);
 
-      // --- escolha do gateway (A/B) ---
+      // --- escolha do gateway ---
       var GATEWAY, abSid = null;
       var forced = (q.get('gw') || '').toLowerCase();
       if (forced === 'cakto' || forced === 'yampi') {
-        GATEWAY = forced; // QA: força e não conta no teste
+        GATEWAY = forced; // QA: força e não conta
+      } else if (SPLIT_YAMPI >= 1) {
+        GATEWAY = 'yampi'; // 100% Yampi — ignora sorteio/persistência (até quem tava salvo em Cakto vai pra Yampi)
+      } else if (SPLIT_YAMPI <= 0) {
+        GATEWAY = 'cakto'; // 100% Cakto
       } else {
+        // A/B com persistência (a mesma pessoa volta pro mesmo lado)
         var KEY = 'eterniza_ab_v1', saved = null;
         try { var raw = localStorage.getItem(KEY); if (raw) { var o = JSON.parse(raw); saved = o.g; abSid = o.s; } } catch (e) {}
         if (saved === 'cakto' || saved === 'yampi') {
@@ -47,8 +51,10 @@
           abSid = 'ab_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
           try { localStorage.setItem(KEY, JSON.stringify({ g: GATEWAY, s: abSid })); } catch (e) {}
         }
+      }
+      // beacon de atribuição (fire-and-forget; não dispara no modo forçado/QA)
+      if (forced !== 'cakto' && forced !== 'yampi') {
         if (!abSid) abSid = 'ab_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-        // beacon de atribuição (fire-and-forget; /api/track é do mesmo domínio)
         try { new Image().src = '/api/track?step=go_' + GATEWAY + '&sid=' + encodeURIComponent(abSid) + '&t=' + Date.now(); } catch (e) {}
       }
 
