@@ -84,18 +84,19 @@ module.exports = async (req, res) => {
       await o.update(patch);
     }
     // CAPI: venda PAGA -> Purchase server-side pro Meta (atribuição cross-domain via fbp/fbc do metadata)
+    let capiResult;
     if (detected === 'pago') {
       const orderId = pick(r.id, body.id, getByPath(r, 'data.id'), getByPath(body, 'resource.id'));
-      const capi = await sendMetaPurchase({
+      capiResult = await sendMetaPurchase({
         value: valor, email, phone: phoneRaw,
         fbp: pick(meta.fbp, getByPath(r, 'metadata.fbp')),
         fbc: pick(meta.fbc, getByPath(r, 'metadata.fbc')),
         eventId: 'yampi_' + (orderId || (phone_normalized || '') + '_' + (valor || '')),
         eventSourceUrl: 'https://eternizamemori.site/',
       });
-      console.log('[yampi-webhook] capi', JSON.stringify(capi));
+      console.log('[yampi-webhook] capi', JSON.stringify(capiResult));
     }
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, capi: req.query.debug ? (capiResult || null) : undefined });
   } catch (e) {
     return res.status(500).json({ error: 'upsert_failed', detail: String(e.message || e).slice(0, 300) });
   }
