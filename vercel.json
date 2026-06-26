@@ -1,5 +1,11 @@
 {
   "functions": {
     "api/preview.js": { "maxDuration": 60 }
-  }
+  },
+  "redirects": [
+    { "source": "/homenagem.html", "destination": "/homenagem", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/homenagem", "destination": "/homenagem.html" }
+  ]
 }
