@@ -20,6 +20,34 @@
 <link rel="dns-prefetch" href="https://images.converteai.net">
 <link rel="dns-prefetch" href="https://license.vturb.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+
+<!-- Meta Pixel (mesmos 2 pixels da landing: 1455407273291719 + 1174240384548110) -->
+<script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1455407273291719');
+  fbq('init', '1174240384548110');
+  fbq('track', 'PageView');
+</script>
+<noscript>
+  <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1455407273291719&ev=PageView&noscript=1"/>
+  <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1174240384548110&ev=PageView&noscript=1"/>
+</noscript>
+<!-- Microsoft Clarity -->
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "xc82teihoe");
+</script>
+
 <style>
   :root{
     --bg:#fdfbf7; --card:#ffffff; --ink:#1c1830; --body:#564f45; --muted:#8a8175;
@@ -115,8 +143,9 @@
   .price .now{font-family:Inter,system-ui,sans-serif;font-size:47px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.022em}
   .price .now small{font-size:19px;vertical-align:top}
   .secure{display:flex;gap:7px;align-items:center;justify-content:center;font-size:12.5px;color:var(--muted);margin-top:10px}
-  .provas{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
-  .provas img{height:300px;border-radius:14px;box-shadow:var(--shadow-s);scroll-snap-align:center;flex:0 0 auto}
+  .provas{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+  .provas::-webkit-scrollbar{display:none}
+  .provas img{height:300px;aspect-ratio:9/16;border-radius:14px;box-shadow:var(--shadow-s);flex:0 0 auto}
   .gbox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow-s);text-align:center;margin-top:22px}
   .gbox .gb{display:inline-block;background:#eef9f0;color:var(--green);border:1px solid #cdeed6;border-radius:30px;padding:7px 16px;font-size:13px;font-weight:700;margin-top:8px}
   .faq{border-top:1px solid var(--line)}
@@ -142,7 +171,7 @@
   .opt:hover{border-color:var(--gold);background:#fffdf8;transform:translateY(-1px);box-shadow:0 10px 22px rgba(80,60,25,.1)}
   .drop:hover{border-color:var(--gold);background:#fffdf8}
   .faq summary:hover{color:var(--gold-d)}
-  .provas img{transition:transform .2s ease}.provas img:active{transform:scale(.98)}
+  .provas img{transition:transform .2s ease;object-fit:cover}.provas img:active{transform:scale(.98)}
   .btn:focus-visible,.opt:focus-visible,.drop:focus-visible,.faq summary:focus-visible{outline:3px solid rgba(197,160,89,.55);outline-offset:2px;border-radius:14px}
   input:focus-visible,textarea:focus-visible{outline:3px solid rgba(197,160,89,.4);outline-offset:1px}
   .opt{animation:optin .45s ease backwards}
@@ -272,7 +301,7 @@
     <p class="center small muted" style="margin-top:0">Veja abaixo um exemplo finalizado pela nossa equipe — é assim que a homenagem fica em 24h após o pagamento:</p>
     <h3 class="serif center" style="font-size:20px;margin-top:18px">Como ficará a sua homenagem</h3>
     <div class="media" style="max-width:280px;margin-top:10px">
-      <video controls playsinline preload="none" poster="/videos/5.jpg"><source src="/videos/5.mp4" type="video/mp4"></video>
+      <video controls playsinline preload="none"><source src="/videos/adriana.mp4" type="video/mp4"></video>
     </div>
 
     <div class="reserva">🕯️ Sua vaga na fila de edição está reservada · entrega em até 24h</div>
@@ -281,7 +310,7 @@
       <div class="recebe">Tudo o que você garante hoje</div>
       <div class="stk"><div class="si"><span class="se">🎬</span><div><b>Vídeo da homenagem</b><span>o reencontro com Cristo em movimento, com transições suaves</span></div></div><div class="sv">R$147</div></div>
       <div class="stk"><div class="si"><span class="se">🎵</span><div><b>Música personalizada</b><span>uma canção feita pra essa pessoa, com a sua história</span></div></div><div class="sv">R$70</div></div>
-      <div class="stk"><div class="si"><span class="se">🖼️</span><div><b>Bônus: arte com Cristo em alta</b><span>a imagem final retocada, sem marca d'água, pra imprimir e guardar</span></div></div><div class="sv">R$40</div></div>
+      <div class="stk"><div class="si"><span class="se">🖼️</span><div><b>Bônus: Arte com Cristo</b><span>a imagem final retocada, sem marca d'água, pra imprimir e guardar</span></div></div><div class="sv">R$40</div></div>
       <div class="stk"><div class="si"><span class="se">✋</span><div><b>Edição à mão por artistas humanos</b><span>cada detalhe do rosto tratado com carinho</span></div></div><div class="sv">incluso</div></div>
       <div class="stk"><div class="si"><span class="se">💬</span><div><b>Entrega e atendimento no WhatsApp</b><span>em até 24h, com gente de verdade</span></div></div><div class="sv">incluso</div></div>
       <div class="stk"><div class="si"><span class="se">🛡️</span><div><b>Garantia de emoção (7 dias)</b><span>não emocionou, devolvemos 100%</span></div></div><div class="sv">incluso</div></div>
@@ -329,6 +358,12 @@
 </main>
 
 <script>
+  // session-id único por aba (persiste em sessionStorage, prefixo 'h-' p/ distinguir do bot)
+  var SID=(function(){var k='etz_sid_h',id=sessionStorage.getItem(k);if(!id){id='h-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);sessionStorage.setItem(k,id);}return id;})();
+  function track(step){try{fetch('/api/track?sid='+encodeURIComponent(SID)+'&step='+encodeURIComponent(step),{method:'GET'});}catch(e){}}
+  function px(ev,params){try{if(window.fbq)fbq('trackCustom',ev,params||{});}catch(e){}}
+  function lead(fields){try{fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({},fields,{source:'homenagem',sid:SID}))});}catch(e){}}
+
   var API = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'https://eternizamemori.site/api/preview' : '/api/preview';
   var CHECKOUT = 'https://eternizamemori.site/ir-checkout.html';
   var state = { quem:'', ref:'', nome:'', memoria:'', frase:'', memoCustom:false, whatsapp:'', fotoB64:'', previewUrl:'' };
@@ -344,6 +379,9 @@
     }
     document.querySelectorAll('.step').forEach(function(s){ s.classList.toggle('active', +s.dataset.step===n); });
     window.scrollTo({top:0,behavior:'smooth'});
+    if(n===1){track('h_quiz');px('QuizIniciado');}
+    else if(n===2) track('h_nome');
+    else if(n===3) track('h_memoria');
   }
 
   // scroll-reveal: blocos da revelação sobem suave ao entrar na tela
@@ -434,7 +472,10 @@
     if(v.length<10||v.length>11){ err.textContent='Coloque o número com DDD (ex.: 11 99999-9999).'; el.focus(); return; }
     var ddd=parseInt(v.slice(0,2),10), distintos=new Set(v.split('')).size;
     if(ddd<11||distintos<3){ err.textContent='Esse número não parece válido. Confira e tente de novo. 🙏'; el.focus(); return; }
-    err.textContent=''; state.whatsapp=v; go(5);
+    err.textContent=''; state.whatsapp=v;
+    track('h_whatsapp'); px('Lead',{content_category:'homenagem'});
+    lead({whatsapp:v, nome:state.nome, parente:state.quem, memoria:state.memoria, frase:state.frase});
+    go(5);
   }
 
   function onFile(e){
@@ -485,12 +526,16 @@
   }
   function gerar(){
     go(6); startLoad();
+    track('h_foto');
     var rel = state.quem==='Outro familiar/amigo' ? '' : state.quem;
     fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fotoB64:state.fotoB64,nome:state.nome,quem:rel,frase:state.frase,memoria:state.memoria,memoCustom:state.memoCustom})})
     .then(function(r){return r.json();})
     .then(function(j){
       if(!j||!j.previewUrl) throw new Error(j&&j.error||'sem_previa');
-      state.previewUrl=j.previewUrl; armReveal();
+      state.previewUrl=j.previewUrl;
+      track('h_previa');
+      lead({whatsapp:state.whatsapp, foto:j.originalUrl||j.previewUrl});
+      armReveal();
       var img=document.getElementById('revImg');
       img.onload=function(){ var w=document.querySelector('.reveal-img'); if(w) w.classList.add('loaded'); finishLoad(function(){ go(7); }); };
       img.onerror=function(){ finishLoad(function(){ go(7); }); };
@@ -504,8 +549,17 @@
   }
 
   function checkout(){
-    location.href = CHECKOUT + '?nome=' + encodeURIComponent(state.nome||'') + (state.whatsapp?'&phone='+encodeURIComponent(state.whatsapp):'');
+    track('h_checkout');
+    px('InitiateCheckout',{value:49.90,currency:'BRL',content_name:'Eterniza'});
+    var qs='?nome='+encodeURIComponent(state.nome||'')+(state.whatsapp?'&phone='+encodeURIComponent(state.whatsapp):'');
+    var up=new URLSearchParams(location.search);
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid'].forEach(function(k){var v=up.get(k);if(v)qs+='&'+k+'='+encodeURIComponent(v);});
+    if(SID)qs+='&sid='+encodeURIComponent(SID);
+    location.href=CHECKOUT+qs;
   }
+
+  // beacon de carga da página /homenagem
+  track('h_hero');
 
   // carrossel de provas: deslize fluido + loop infinito (dedo no celular, clicar-e-arrastar no mouse)
   (function(){

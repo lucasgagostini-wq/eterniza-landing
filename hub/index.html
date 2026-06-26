@@ -220,6 +220,10 @@
     .ana-periods .p{font-size:12px;padding:6px 11px;border-radius:9px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#9a9a9a;transition:color .15s,border-color .15s,background .15s}
     .ana-periods .p:hover{color:#cfcfcf}
     .ana-periods .p.on{border-color:var(--accent-border);color:var(--accent-lt);background:var(--accent-soft)}
+    /* toggle funil bot / homenagem */
+    .ana-tabs{display:flex;gap:4px;background:#0d0d0d;border:1px solid var(--line-hard);border-radius:10px;padding:3px}
+    .ana-tab{font-size:12px;font-weight:600;padding:5px 12px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:var(--muted);transition:background .15s,color .15s}
+    .ana-tab.on{background:var(--surface-high);color:var(--fg)}
     /* A/B Cakto x Yampi */
     .abwrap{margin-top:18px;border-top:1px solid var(--line-hard);padding-top:16px}
     .abwrap h4{margin:0 0 10px;font-size:13px;color:#cfcfcf;font-weight:600;letter-spacing:.2px}
@@ -379,6 +383,10 @@
   <div id="analytics">
     <div class="ana-head">
       <span class="ana-title">📊 Análise do funil</span>
+      <div class="ana-tabs">
+        <button class="ana-tab on" id="tabBot" onclick="setFunnelMode('bot')">📱 Bot</button>
+        <button class="ana-tab" id="tabH" onclick="setFunnelMode('homenagem')">🖼️ Prévia</button>
+      </div>
       <div class="ana-filter">
         <div class="ana-periods">
           <span class="p on" data-preset="hoje">Hoje</span>
@@ -927,7 +935,13 @@
 
     // ===== painel de análise · dashboard horizontal (auto-refresh próprio) =====
     let anaBuilt=false, anaLastUpdate=0, anaSinceISO=null, anaTimer=null, anaTick=null;
-    const SHORT={pagina_venda:'Página',cta_clicou:'Clicou CTA',g1_abertura:'Abertura',g2_porquem:'Por quem',g3_nome:'Nome',g4_memoria:'Memória',g5_desejo:'Desejo',g6_video:'Vídeo',g7_foto:'Foto',g8_whatsapp:'WhatsApp'};
+    let FUNNEL_MODE='bot', lastAnaData=null;
+    function setFunnelMode(mode){
+      FUNNEL_MODE=mode; anaBuilt=false;
+      document.querySelectorAll('.ana-tab').forEach(b=>b.classList.toggle('on',b.id===(mode==='bot'?'tabBot':'tabH')));
+      if(lastAnaData) paintFunnel(lastAnaData);
+    }
+    const SHORT={pagina_venda:'Página',cta_clicou:'Clicou CTA',g1_abertura:'Abertura',g2_porquem:'Por quem',g3_nome:'Nome',g4_memoria:'Memória',g5_desejo:'Desejo',g6_video:'Vídeo',g7_foto:'Foto',g8_whatsapp:'WhatsApp',h_hero:'Pág. H',h_quiz:'CTA hero',h_nome:'Q1 quem',h_memoria:'Q2 nome',h_whatsapp:'WhatsApp',h_foto:'Foto',h_previa:'Prévia',h_checkout:'Finalizar'};
 
     function buildFunnelSkeleton(funnel){
       const cols=funnel.map(s=>`<div class="fcol" data-step="${esc(s.step)}" title="${esc(s.label)}">
@@ -983,8 +997,9 @@
     }
 
     function paintFunnel(d){
-      const f=(d&&d.funnel)||[];
-      if(!anaBuilt){ if(!f.length){$('funnelView').innerHTML='<div class="ana-loading">Sem dados ainda.</div>';return} buildFunnelSkeleton(f); }
+      lastAnaData=d;
+      const f=(d&&(FUNNEL_MODE==='homenagem'?d.funnelH:d.funnel))||[];
+      if(!anaBuilt){ if(!f.length){$('funnelView').innerHTML='<div class="ana-loading">Sem dados ainda para este funil.</div>';return} buildFunnelSkeleton(f); }
       const chart=$('fchart'); if(!chart)return;
       const top=Math.max(1,(f[0]&&f[0].count)||0);
       let maxDropIdx=-1,maxDrop=0; // maior QUEDA EM VOLUME (onde se perde mais gente), não % relativo
