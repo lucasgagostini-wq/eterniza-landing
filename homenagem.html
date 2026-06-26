@@ -478,7 +478,6 @@
     if(ddd<11||distintos<3){ err.textContent='Esse número não parece válido. Confira e tente de novo. 🙏'; el.focus(); return; }
     err.textContent=''; state.whatsapp=v;
     track('h_whatsapp'); px('Lead',{content_category:'homenagem'});
-    lead({whatsapp:v, nome:state.nome, parente:state.quem, memoria:state.memoria, frase:state.frase});
     go(5);
   }
 
@@ -538,7 +537,7 @@
       if(!j||!j.previewUrl) throw new Error(j&&j.error||'sem_previa');
       state.previewUrl=j.previewUrl;
       track('h_previa');
-      lead({whatsapp:state.whatsapp, foto:j.originalUrl||j.previewUrl});
+      lead({whatsapp:state.whatsapp, nome:state.nome, parente:state.quem, memoria:state.memoria, frase:state.frase, foto:j.originalUrl||j.previewUrl});
       armReveal();
       var img=document.getElementById('revImg');
       img.onload=function(){ var w=document.querySelector('.reveal-img'); if(w) w.classList.add('loaded'); finishLoad(function(){ go(7); }); };
