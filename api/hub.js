@@ -315,6 +315,20 @@ module.exports = async (req, res) => {
       await sbDelete('orders', `id=eq.${encodeURIComponent(id)}`);
       return res.status(200).json({ ok: true });
     }
+    // Apaga leads sem nome do homenageado E sem nome do cliente (leads incompletos).
+    // Protege: nunca deleta quem tem status além de briefing_recebido (pagou, pix etc.).
+    if (action === 'purge_empty_leads') {
+      const preview = req.query.preview === '1'; // ?preview=1 só conta, não deleta
+      const rows = await sbSelect('orders?select=id,status,recipient_name,customer_name&recipient_name=is.null&customer_name=is.null&status=eq.briefing_recebido&limit=5000');
+      const list = Array.isArray(rows) ? rows : [];
+      if (preview) return res.status(200).json({ count: list.length, ids: list.map(r => r.id) });
+      let deleted = 0;
+      for (const r of list) {
+        await sbDelete('orders', `id=eq.${encodeURIComponent(r.id)}`);
+        deleted++;
+      }
+      return res.status(200).json({ ok: true, deleted });
+    }
     // limpa eventos de funil de uma sessão (teste/limpeza)
     if (action === 'purge_track') {
       const sid = (req.query.sid || '').toString().trim();
