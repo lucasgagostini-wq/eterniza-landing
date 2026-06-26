@@ -437,7 +437,7 @@
   function gerar(){
     go(6); startLoad();
     var rel = state.quem==='Outro familiar/amigo' ? '' : state.quem;
-    fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fotoB64:state.fotoB64,nome:state.nome,quem:rel,frase:state.frase,memoria:state.memoria,nowm:true})})
+    fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fotoB64:state.fotoB64,nome:state.nome,quem:rel,frase:state.frase,memoria:state.memoria})})
     .then(function(r){return r.json();})
     .then(function(j){
       if(!j||!j.previewUrl) throw new Error(j&&j.error||'sem_previa');
