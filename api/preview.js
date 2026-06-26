@@ -221,13 +221,16 @@ module.exports = async (req, res) => {
     } else {
       src = await fetchAsBase64(photoUrl);
     }
+    // sobe original antes da IA (time de produção usa essa foto, não a prévia com watermark)
+    let origUrl = null;
+    try { origUrl = await uploadToStorage(src.base64, src.mime); } catch (e) { console.log('[preview] orig upload falhou:', String(e && e.message || e).slice(0, 100)); }
     const prompt = buildPrompt(body);
     const gen = provider === 'openrouter' ? await callOpenRouter(src.base64, src.mime, prompt) : await callGemini(src.base64, src.mime, prompt);
     const noWm = q.nowm === '1' || q.nowm === 'true' || body.nowm === true || body.nowm === 1;
     const wm = noWm ? gen : await applyWatermark(gen.base64, gen.mime);
     const previewUrl = await uploadToStorage(wm.base64, wm.mime);
     console.log('[preview] ok (' + provider + ') ->', previewUrl);
-    return res.status(200).json({ ok: true, previewUrl, provider });
+    return res.status(200).json({ ok: true, previewUrl, originalUrl: origUrl, provider });
   } catch (e) {
     const detail = String(e && e.message || e).slice(0, 320);
     console.log('[preview] ERRO:', detail);
