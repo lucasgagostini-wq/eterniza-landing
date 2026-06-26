@@ -434,6 +434,7 @@
     // tag de recuperação visível no card (nao_contatado / sem_resposta => sem tag)
     const RECO_TAG = { contatado:['Contatado','#7cc0ff','rgba(96,165,250,.13)'], convertido:['Convertido ✓','#86efac','rgba(34,197,94,.15)'], descartado:['Descartado','#fca5a5','rgba(248,113,113,.13)'] };
     function recoTag(o){ const t=RECO_TAG[o&&o.recovery_contact_status]; return t?`<span class="chip" style="color:${t[1]};background:${t[2]};border:1px solid ${t[1]}33">${esc(t[0])}</span>`:''; }
+    function sourceTag(o){ const s=(o.typebot_payload||{}).source; if(s==='homenagem') return '<span class="chip" style="color:#c084fc;background:rgba(192,132,252,.12);border:1px solid #c084fc33">✨ Prévia</span>'; if(o.typebot_payload) return '<span class="chip" style="color:#67e8f9;background:rgba(103,232,249,.1);border:1px solid #67e8f933">🤖 Bot</span>'; return ''; }
     const ALL_STATUS = ['briefing_recebido','checkout_iniciado','recuperacao_pix','pago','fila_edicao','produzindo','pronta','entregue','erro'];
     const FILTERS = [
       {key:'recuperar',label:'Recuperar',test:o=>RECUPERAR.includes(o.status)},
@@ -605,7 +606,7 @@
         : `${o.relationship?esc(o.relationship)+' · ':''}<span style="color:#e7a17a">comprador no pagamento</span>`;
       return `<div class="fc-top"><span class="nm">${titulo}</span><span class="dt mono">${esc(fmt(o.created_at))}</span></div>
           <span class="for">${sub}</span>
-          <div class="tags">${chip(o.status)}${recoTag(o)}</div>`;
+          <div class="tags">${chip(o.status)}${recoTag(o)}${sourceTag(o)}</div>`;
     }
     const cardSig=o=>JSON.stringify([o.customer_name,o.recipient_name,o.relationship,o.status,o.created_at,o.recovery_contact_status]);
     // RECONCILE: cria/atualiza/move só o que mudou. Cards iguais ficam intactos
