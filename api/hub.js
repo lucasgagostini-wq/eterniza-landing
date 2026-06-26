@@ -183,9 +183,14 @@ module.exports = async (req, res) => {
         for (const sid of base) if (target.has(sid)) n++;
         return n;
       };
+      // /homenagem é tráfego DIRETO (split removido em 26/06): não dispara mais `go_homenagem`.
+      // Âncora real da sessão = 1º toque no funil da página (h_hero direto, ou h_quiz se START_AT_QUIZ).
+      // Mantém go_homenagem p/ não perder as sessões legadas do A/B antigo.
+      const homenagemSet = new Set();
+      for (const step of ['go_homenagem', 'h_hero', 'h_quiz']) for (const sid of setOf(step)) homenagemSet.add(sid);
       const assigned = {
         typebot: setOf('go_typebot'),
-        homenagem: setOf('go_homenagem'),
+        homenagem: homenagemSet,
       };
       const out = {
         typebot: {
@@ -195,7 +200,7 @@ module.exports = async (req, res) => {
           whatsapp: countIn(assigned.typebot, 'g8_whatsapp'),
           photo: countIn(assigned.typebot, 'g7_foto'),
           preview: null,
-          checkout: countIn(assigned.typebot, 'go_yampi') + countIn(assigned.typebot, 'go_cakto'),
+          checkout: 0, // calculado abaixo (evento de página ∪ pedido que chegou ao pagamento)
           leads: 0, paid: 0, recuperacao: 0, revenue: 0,
         },
         homenagem: {
@@ -205,10 +210,21 @@ module.exports = async (req, res) => {
           whatsapp: countIn(assigned.homenagem, 'h_whatsapp'),
           photo: countIn(assigned.homenagem, 'h_foto'),
           preview: countIn(assigned.homenagem, 'h_previa'),
-          checkout: countIn(assigned.homenagem, 'h_checkout'),
+          checkout: 0, // calculado abaixo
           leads: 0, paid: 0, recuperacao: 0, revenue: 0,
         },
       };
+
+      // CHECKOUT (InitiateCheckout) por SID, robusto a 2 falhas:
+      //  (a) o bot NÃO repassa o sid da landing pro ir-checkout -> go_yampi/go_cakto não casam com go_typebot;
+      //  (b) /homenagem usa h_checkout (mesmo domínio, sid sempre casa).
+      // Por isso unimos: sinal de EVENTO de página + sinal de PEDIDO que chegou ao pagamento (pix/pago).
+      const coSids = { typebot: new Set(), homenagem: new Set() };
+      for (const sid of setOf('h_checkout')) if (assigned.homenagem.has(sid)) coSids.homenagem.add(sid);
+      for (const step of ['go_yampi', 'go_cakto']) for (const sid of setOf(step)) {
+        if (assigned.homenagem.has(sid)) coSids.homenagem.add(sid);
+        else if (assigned.typebot.has(sid)) coSids.typebot.add(sid);
+      }
 
       const extractSid = (o) => {
         const tp = o.typebot_payload || {};
@@ -226,15 +242,24 @@ module.exports = async (req, res) => {
       };
       const ords = await sbSelect(`orders?select=status,valor,typebot_payload,cakto_payload${f}&limit=100000`).catch(() => []);
       const PAID = ['pago', 'fila_edicao', 'produzindo', 'pronta', 'entregue'];
+      // pedido chegou ao checkout = gerou pix OU pagou (sinal de pedido p/ complementar o evento de página)
+      const REACHED_CO = ['checkout_iniciado', 'recuperacao_pix', ...PAID];
       for (const o of (Array.isArray(ords) ? ords : [])) {
         const sid = extractSid(o);
-        const side = sid && assigned.homenagem.has(sid) ? 'homenagem' : sid && assigned.typebot.has(sid) ? 'typebot' : null;
+        // `source==='homenagem'` é gravado no lead da página -> atribuição definitiva, à prova de sid.
+        const isHomenagem = (o.typebot_payload || {}).source === 'homenagem';
+        const side = isHomenagem ? 'homenagem'
+          : sid && assigned.homenagem.has(sid) ? 'homenagem'
+          : sid && assigned.typebot.has(sid) ? 'typebot' : null;
         if (!side) continue;
         const s = out[side];
         s.leads++;
         if (PAID.includes(o.status)) { s.paid++; s.revenue += Number(o.valor) || 0; }
         else if (o.status === 'recuperacao_pix') s.recuperacao++;
+        if (sid && REACHED_CO.includes(o.status)) coSids[side].add(sid);
       }
+      out.typebot.checkout = coSids.typebot.size;
+      out.homenagem.checkout = coSids.homenagem.size;
       for (const k of ['typebot', 'homenagem']) {
         const s = out[k];
         s.started_rate = s.assigned ? +(100 * s.started / s.assigned).toFixed(1) : null;
