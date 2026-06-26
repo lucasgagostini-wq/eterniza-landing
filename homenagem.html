@@ -256,7 +256,8 @@
     <div class="passo">Quase lá ✨</div>
     <h2 class="serif qtitle">Onde devemos enviar a sua<br>homenagem finalizada?</h2>
     <p class="muted center small" style="margin-top:-12px">De forma segura e privada, no seu WhatsApp.</p>
-    <input id="zap" type="tel" inputmode="numeric" oninput="maskZap(this)" maxlength="16" placeholder="(11) 99999-9999" style="margin-top:16px" />
+    <input id="nomeComprador" type="text" autocomplete="given-name" placeholder="Seu nome (ex.: Maria)" style="margin-top:16px" />
+    <input id="zap" type="tel" inputmode="numeric" oninput="maskZap(this)" maxlength="16" placeholder="(11) 99999-9999" style="margin-top:10px" />
     <div class="err" id="zapErr" role="alert" aria-live="polite"></div>
     <button class="btn btn-green" style="margin-top:14px" onclick="saveZap()">Receber homenagem no WhatsApp</button>
     <button class="btn btn-ghost" onclick="go(3)">← voltar</button>
@@ -369,7 +370,7 @@
 
   var API = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'https://eternizamemori.site/api/preview' : '/api/preview';
   var CHECKOUT = 'https://eternizamemori.site/ir-checkout.html';
-  var state = { quem:'', ref:'', nome:'', memoria:'', frase:'', memoCustom:false, whatsapp:'', fotoB64:'', previewUrl:'' };
+  var state = { quem:'', ref:'', nome:'', memoria:'', frase:'', memoCustom:false, whatsapp:'', nomeComprador:'', fotoB64:'', previewUrl:'' };
 
   function go(n){
     if(n!==0){
@@ -477,6 +478,7 @@
     var ddd=parseInt(v.slice(0,2),10), distintos=new Set(v.split('')).size;
     if(ddd<11||distintos<3){ err.textContent='Esse número não parece válido. Confira e tente de novo. 🙏'; el.focus(); return; }
     err.textContent=''; state.whatsapp=v;
+    var nc=document.getElementById('nomeComprador'); state.nomeComprador=(nc&&nc.value||'').trim();
     track('h_whatsapp'); px('Lead',{content_category:'homenagem'});
     go(5);
   }
@@ -537,7 +539,7 @@
       if(!j||!j.previewUrl) throw new Error(j&&j.error||'sem_previa');
       state.previewUrl=j.previewUrl;
       track('h_previa');
-      lead({whatsapp:state.whatsapp, nome:state.nome, parente:state.quem, memoria:state.memoria, frase:state.frase, foto:j.originalUrl||j.previewUrl});
+      lead({whatsapp:state.whatsapp, comprador:state.nomeComprador||undefined, nome:state.nome, parente:state.quem, memoria:state.memoria, frase:state.frase, foto:j.originalUrl||j.previewUrl});
       armReveal();
       var img=document.getElementById('revImg');
       img.onload=function(){ var w=document.querySelector('.reveal-img'); if(w) w.classList.add('loaded'); finishLoad(function(){ go(7); }); };
