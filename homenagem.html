@@ -563,22 +563,29 @@
 
   // carrossel de provas: deslize fluido + loop infinito (dedo no celular, clicar-e-arrastar no mouse)
   (function(){
-    var track=document.querySelector('.provas'); if(!track||track.dataset.loop) return; track.dataset.loop='1';
-    track.style.scrollSnapType='none'; track.style.cursor='grab';
-    Array.prototype.slice.call(track.children).forEach(function(n){ n.draggable=false; var c=n.cloneNode(true); c.setAttribute('aria-hidden','true'); track.appendChild(c); });
-    var half=0; function measure(){ var w=track.scrollWidth; if(w>40) half=Math.round(w/2); }
-    window.addEventListener('resize', measure);
-    function wrap(){ if(!half) return; if(track.scrollLeft>=half) track.scrollLeft-=half; else if(track.scrollLeft<=0) track.scrollLeft+=half; }
-    track.addEventListener('scroll', wrap, {passive:true});
+    var el=document.querySelector('.provas'); if(!el||el.dataset.loop) return; el.dataset.loop='1';
+    el.style.cursor='grab';
+    Array.prototype.slice.call(el.children).forEach(function(n){ n.draggable=false; var c=n.cloneNode(true); c.setAttribute('aria-hidden','true'); el.appendChild(c); });
+    var half=0;
+    function measure(){
+      var w=el.scrollWidth, cur=Math.round(w/2);
+      // re-mede se ainda não definido OU se largura mudou bastante (imagens lazy carregando)
+      if(cur>40 && Math.abs(cur-half)>30){ half=cur; if(el.scrollLeft>=half) el.scrollLeft-=half; }
+    }
+    window.addEventListener('resize', function(){ half=0; });
+    function wrap(){ if(!half) return; if(el.scrollLeft>=half) el.scrollLeft-=half; else if(el.scrollLeft<=0) el.scrollLeft+=half; }
+    el.addEventListener('scroll', wrap, {passive:true});
+    // re-mede quando cada imagem termina de carregar (imagens lazy mudam o scrollWidth)
+    el.querySelectorAll('img').forEach(function(im){ im.addEventListener('load', function(){ half=0; }); });
     var paused=false, dragging=false, sx=0, sl=0, moved=false, rt;
-    (function loop(){ if(!half) measure(); if(!paused && !dragging && half){ track.scrollLeft+=0.45; wrap(); } requestAnimationFrame(loop); })();
-    track.addEventListener('pointerdown', function(e){ paused=true; clearTimeout(rt); if(e.pointerType!=='mouse') return; dragging=true; moved=false; sx=e.clientX; sl=track.scrollLeft; track.style.cursor='grabbing'; e.preventDefault(); });
-    track.addEventListener('pointermove', function(e){ if(!dragging) return; var dx=e.clientX-sx; if(Math.abs(dx)>3) moved=true; track.scrollLeft=sl-dx; wrap(); });
-    function endDrag(){ dragging=false; track.style.cursor='grab'; clearTimeout(rt); rt=setTimeout(function(){ paused=false; },1200); }
-    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){ track.addEventListener(ev, endDrag); });
-    track.addEventListener('mouseenter', function(){ paused=true; });
-    track.addEventListener('mouseleave', function(){ if(!dragging) paused=false; });
-    track.querySelectorAll('img').forEach(function(im){ im.addEventListener('click', function(e){ if(moved) e.preventDefault(); }); });
+    (function loop(){ measure(); if(!paused && !dragging && half){ el.scrollLeft+=0.45; wrap(); } requestAnimationFrame(loop); })();
+    el.addEventListener('pointerdown', function(e){ paused=true; clearTimeout(rt); if(e.pointerType!=='mouse') return; dragging=true; moved=false; sx=e.clientX; sl=el.scrollLeft; el.style.cursor='grabbing'; e.preventDefault(); });
+    el.addEventListener('pointermove', function(e){ if(!dragging) return; var dx=e.clientX-sx; if(Math.abs(dx)>3) moved=true; el.scrollLeft=sl-dx; wrap(); });
+    function endDrag(){ dragging=false; el.style.cursor='grab'; clearTimeout(rt); rt=setTimeout(function(){ paused=false; },1200); }
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){ el.addEventListener(ev, endDrag); });
+    el.addEventListener('mouseenter', function(){ paused=true; });
+    el.addEventListener('mouseleave', function(){ if(!dragging) paused=false; });
+    el.querySelectorAll('img').forEach(function(im){ im.addEventListener('click', function(e){ if(moved) e.preventDefault(); }); });
   })();
 </script>
 </body>
