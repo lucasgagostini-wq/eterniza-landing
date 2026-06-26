@@ -128,6 +128,14 @@
   .opt:nth-child(1){animation-delay:.04s}.opt:nth-child(2){animation-delay:.09s}.opt:nth-child(3){animation-delay:.14s}.opt:nth-child(4){animation-delay:.19s}.opt:nth-child(5){animation-delay:.24s}.opt:nth-child(6){animation-delay:.29s}
   @keyframes optin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+  /* ——— polish round 2: scroll-reveal, shimmer, erro, economia ——— */
+  .reveal-up{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+  .reveal-up.in{opacity:1;transform:none}
+  .reveal-img{background:linear-gradient(100deg,#ece7de 28%,#f6f2ea 50%,#ece7de 72%);background-size:220% 100%;animation:shim 1.5s linear infinite}
+  .reveal-img.loaded{animation:none;background:#eee}
+  @keyframes shim{to{background-position:-220% 0}}
+  .saveb{display:inline-block;background:#eef9f0;color:var(--green);border:1px solid #cdeed6;border-radius:30px;padding:5px 14px;font-size:12.5px;font-weight:700;margin-top:10px}
+  .err{color:#c0392b;font-size:13px;font-weight:500;margin:8px 2px 0;min-height:16px}
 </style>
 </head>
 <body>
@@ -186,6 +194,7 @@
     <h2 class="serif qtitle">Onde devemos enviar a sua<br>homenagem finalizada?</h2>
     <p class="muted center small" style="margin-top:-12px">De forma segura e privada, no seu WhatsApp.</p>
     <input id="zap" type="tel" inputmode="numeric" placeholder="(DDD) 90000-0000" style="margin-top:16px" />
+    <div class="err" id="zapErr" role="alert" aria-live="polite"></div>
     <button class="btn btn-green" style="margin-top:14px" onclick="saveZap()">Receber homenagem no WhatsApp</button>
     <button class="btn btn-ghost" onclick="go(2)">← voltar</button>
   </section>
@@ -246,6 +255,7 @@
       <div class="price">
         <div class="now"><small>R$</small>49<small>,90</small></div>
         <div class="small muted">pagamento único e 100% seguro</div>
+        <div class="saveb">você economiza R$207 hoje</div>
       </div>
       <button class="btn btn-green" onclick="checkout()">Finalizar minha homenagem</button>
       <p class="center small muted" style="margin:10px 0 0">Pague no Pix ou cartão — sem cadastro longo.</p>
@@ -294,7 +304,12 @@
     window.scrollTo({top:0,behavior:'smooth'});
   }
 
-  var QUEM = [['Minha Mãe','sua mãe'],['Meu Pai','seu pai'],['Meu Companheiro(a)','seu companheiro(a)'],['Meu Filho(a)','seu filho(a)'],['Meu Irmão(ã)','seu irmão(ã)'],['Outro familiar/amigo','essa pessoa querida']];
+  // scroll-reveal: blocos da revelação sobem suave ao entrar na tela
+  var _io=('IntersectionObserver' in window && !(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))
+    ? new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); _io.unobserve(e.target); } }); },{threshold:.1,rootMargin:'0px 0px -6% 0px'}) : null;
+  function armReveal(){ if(!_io) return; document.querySelectorAll('[data-step="6"] .firstv,[data-step="6"] .reserva,[data-step="6"] .card,[data-step="6"] .sect,[data-step="6"] .provas,[data-step="6"] .gbox,[data-step="6"] details.faq').forEach(function(el){ el.classList.add('reveal-up'); _io.observe(el); }); }
+
+  var QUEM = [['Minha Mãe','sua mãe'],['Meu Pai','seu pai'],['Meu Companheiro(a)','seu companheiro(a)'],['Meu Filho(a)','seu filho(a)'],['Meu Irmão(ã)','seu irmão(ã)'],['Outro familiar/amigo','quem você ama']];
   (function(){
     var box=document.getElementById('optsQuem');
     QUEM.forEach(function(o){
@@ -313,9 +328,10 @@
   document.getElementById('memoria').addEventListener('input',function(){ state.memoria=this.value; });
 
   function saveZap(){
-    var v=(document.getElementById('zap').value||'').replace(/\D/g,'');
-    if(v.length<10){ document.getElementById('zap').focus(); return; }
-    state.whatsapp=v; go(4);
+    var el=document.getElementById('zap'), err=document.getElementById('zapErr');
+    var v=(el.value||'').replace(/\D/g,'');
+    if(v.length<10){ err.textContent='Coloque um número válido com DDD (ex.: 11 99999-9999).'; el.focus(); return; }
+    err.textContent=''; state.whatsapp=v; go(4);
   }
 
   function onFile(e){
@@ -339,6 +355,7 @@
 
   var MSGS=['Recebendo a foto com muito carinho…','Estamos preparando tudo para você…','Criando a prévia da homenagem…','Vestindo de paz e luz…','Quase pronto. Preparando a revelação…'];
   function gerar(){
+    if(state.ref){ document.getElementById('loadTitle').textContent='Criando a prévia de '+state.ref+'…'; document.getElementById('revTitle').textContent='A prévia da homenagem de '+state.ref; }
     go(5);
     var i=0, pct=6;
     var bar=document.getElementById('loadBar'), msg=document.getElementById('loadMsg');
@@ -350,7 +367,11 @@
       clearInterval(t);
       if(!j||!j.previewUrl) throw new Error(j&&j.error||'sem_previa');
       state.previewUrl=j.previewUrl; bar.style.width='100%';
-      var img=document.getElementById('revImg'); img.onload=function(){go(6);}; img.src=j.previewUrl;
+      armReveal();
+      var img=document.getElementById('revImg');
+      img.onload=function(){ var w=document.querySelector('.reveal-img'); if(w) w.classList.add('loaded'); go(6); };
+      img.onerror=function(){ go(6); };
+      img.src=j.previewUrl;
       setTimeout(function(){ if(document.querySelector('.step.active').dataset.step!=='6') go(6); },1400);
     })
     .catch(function(){
