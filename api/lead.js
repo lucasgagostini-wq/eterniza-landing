@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
     photo_url: pick(src.foto, src.photo_url, src.foto_url, src.imagem),
     typebot_payload: src,
   };
-  Object.keys(fields).forEach(k => fields[k] === undefined && delete fields[k]);
+  Object.keys(fields).forEach(k => (fields[k] === undefined || fields[k] === null) && delete fields[k]);
 
   try {
     const r = await upsertOrder({ phone_normalized, email, fields, newStatus: 'briefing_recebido' });
