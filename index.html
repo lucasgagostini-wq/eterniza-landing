@@ -388,16 +388,15 @@
     <div class="copy">© 2026 Eterniza. Todos os direitos reservados.</div>
   </footer>
 
-  <!-- Propaga UTMs e faz o A/B do quiz (landing -> Typebot ou /homenagem) -->
+  <!-- Propaga UTMs e rastreia funil (landing -> Typebot) -->
   <script>
     (function () {
-      // ===== funil (Análise no Hub): id de sessão + ping leve, fire-and-forget =====
       var SID;
       try { SID = sessionStorage.getItem('etz_sid'); if (!SID) { SID = Date.now().toString(36) + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('etz_sid', SID); } } catch (e) { SID = String(Date.now()); }
       function track(step) {
         try {
           var done = JSON.parse(sessionStorage.getItem('etz_steps') || '[]');
-          if (done.indexOf(step) >= 0) return; // 1 ping por passo por sessão
+          if (done.indexOf(step) >= 0) return;
           done.push(step); sessionStorage.setItem('etz_steps', JSON.stringify(done));
         } catch (e) {}
         try {
@@ -405,69 +404,29 @@
           if (navigator.sendBeacon) navigator.sendBeacon(url); else fetch(url, { keepalive: true, mode: 'no-cors' });
         } catch (e) {}
       }
-      track('pagina_venda'); // visita à página de venda
+      track('pagina_venda');
+
+      // limpa cache do A/B anterior (garante que quem tinha 'homenagem' salvo vai pro bot)
+      try { localStorage.removeItem('eterniza_quiz_ab_v1'); } catch (e) {}
 
       var TYPEBOT_URL = 'https://app.chatecom.me/eternizam';
-      var HOMENAGEM_URL = '/homenagem';
-      var SPLIT_HOMENAGEM = 0.5;
       var incoming = new URLSearchParams(window.location.search || '');
 
-      function forcedVariant() {
-        var v = (incoming.get('quiz') || incoming.get('ab_quiz') || '').toLowerCase();
-        if (v === 'bot' || v === 'typebot') return 'typebot';
-        if (v === 'homenagem' || v === 'previa' || v === 'prévia') return 'homenagem';
-        return null;
-      }
-
-      function chooseQuizVariant() {
-        var forced = forcedVariant();
-        if (forced) return forced;
-        var key = 'eterniza_quiz_ab_v1';
-        try {
-          var raw = localStorage.getItem(key);
-          if (raw) {
-            var saved = JSON.parse(raw);
-            if (saved && (saved.variant === 'typebot' || saved.variant === 'homenagem')) return saved.variant;
-          }
-        } catch (e) {}
-        var variant = Math.random() < SPLIT_HOMENAGEM ? 'homenagem' : 'typebot';
-        try { localStorage.setItem(key, JSON.stringify({ variant: variant, createdAt: Date.now() })); } catch (e) {}
-        return variant;
-      }
-
-      function buildDestination(variant) {
-        var url = variant === 'homenagem'
-          ? new URL(HOMENAGEM_URL, window.location.origin)
-          : new URL(TYPEBOT_URL);
-        incoming.forEach(function (val, key) {
-          if (key === 'quiz' || key === 'ab_quiz') return;
-          url.searchParams.set(key, val);
-        });
+      function buildDest() {
+        var url = new URL(TYPEBOT_URL);
+        incoming.forEach(function (val, key) { url.searchParams.set(key, val); });
         url.searchParams.set('sid', SID);
-        url.searchParams.set('ab_quiz', variant);
-        if (variant === 'homenagem') {
-          url.searchParams.set('start', 'quiz');
-          url.searchParams.set('from', 'landing_ab');
-        }
         return url.toString();
       }
 
-      var initialVariant = chooseQuizVariant();
       document.querySelectorAll('a.cta').forEach(function (a) {
-        a.setAttribute('href', buildDestination(initialVariant));
+        a.setAttribute('href', buildDest());
         a.addEventListener('click', function (event) {
           event.preventDefault();
-          var variant = chooseQuizVariant();
-          var target = buildDestination(variant);
-          try {
-            if (window.fbq) {
-              fbq('trackCustom', variant === 'homenagem' ? 'FoiParaHomenagem' : 'FoiParaBot');
-              fbq('trackCustom', 'QuizABClick', { variant: variant });
-            }
-          } catch (e) {}
+          try { if (window.fbq) { fbq('trackCustom', 'FoiParaBot'); fbq('trackCustom', 'QuizABClick', { variant: 'typebot' }); } } catch (e) {}
           track('cta_clicou');
-          track(variant === 'homenagem' ? 'go_homenagem' : 'go_typebot');
-          window.location.href = target;
+          track('go_typebot');
+          window.location.href = buildDest();
         });
       });
     })();
