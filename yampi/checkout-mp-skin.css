@@ -24,21 +24,6 @@ body.mercadopago {
   background: #ededed; /* fundo cinza-claro típico do Mercado Pago */
 }
 
-/* ---- Barra superior azul MP (flush, largura total) ----------------------- */
-body.mercadopago::before {
-  content: "🔒  Pagamento 100% seguro · Mercado Pago";
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 16px;
-  background: var(--mp-blue);
-  color: #fff;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: .2px;
-}
-
 /* ---- Header branco full-width (corrige a logo "ilhota"/cortada) ----------- */
 body.mercadopago header {
   background: #fff !important;
