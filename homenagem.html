@@ -100,7 +100,7 @@
   .stktotal s{color:#bcb3a4;font-weight:400}
   .price{text-align:center;margin:18px 0 4px}
   .price .old{color:#bcb3a4;text-decoration:line-through;font-size:16px}
-  .price .now{font-family:"Playfair Display",serif;font-size:44px;font-weight:800;color:var(--ink);line-height:1}
+  .price .now{font-family:Inter,system-ui,sans-serif;font-size:47px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.022em}
   .price .now small{font-size:19px;vertical-align:top}
   .secure{display:flex;gap:7px;align-items:center;justify-content:center;font-size:12.5px;color:var(--muted);margin-top:10px}
   .provas{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
@@ -264,7 +264,7 @@
 
     <div class="reserva">🕯️ Sua vaga na fila de edição está reservada · entrega em até 24h</div>
     <div class="card">
-      <h3 class="serif center" style="font-size:19px">Em 24h, sua homenagem chega<br>pronta no seu WhatsApp</h3>
+      <h3 class="center" style="font-size:19.5px;font-weight:700;letter-spacing:-.01em">Em 24h, sua homenagem chega<br>pronta no seu WhatsApp</h3>
       <div class="recebe">Tudo o que você garante hoje</div>
       <div class="stk"><div class="si"><span class="se">🎬</span><div><b>Vídeo da homenagem</b><span>o reencontro com Cristo em movimento, com transições suaves</span></div></div><div class="sv">R$147</div></div>
       <div class="stk"><div class="si"><span class="se">🎵</span><div><b>Música personalizada</b><span>uma canção feita pra essa pessoa, com a sua história</span></div></div><div class="sv">R$70</div></div>
@@ -457,6 +457,26 @@
   function checkout(){
     location.href = CHECKOUT + '?nome=' + encodeURIComponent(state.nome||'') + (state.whatsapp?'&phone='+encodeURIComponent(state.whatsapp):'');
   }
+
+  // carrossel de provas: deslize fluido + loop infinito (dedo no celular, clicar-e-arrastar no mouse)
+  (function(){
+    var track=document.querySelector('.provas'); if(!track||track.dataset.loop) return; track.dataset.loop='1';
+    track.style.scrollSnapType='none'; track.style.cursor='grab';
+    Array.prototype.slice.call(track.children).forEach(function(n){ n.draggable=false; var c=n.cloneNode(true); c.setAttribute('aria-hidden','true'); track.appendChild(c); });
+    var half=0; function measure(){ var w=track.scrollWidth; if(w>40) half=Math.round(w/2); }
+    window.addEventListener('resize', measure);
+    function wrap(){ if(!half) return; if(track.scrollLeft>=half) track.scrollLeft-=half; else if(track.scrollLeft<=0) track.scrollLeft+=half; }
+    track.addEventListener('scroll', wrap, {passive:true});
+    var paused=false, dragging=false, sx=0, sl=0, moved=false, rt;
+    (function loop(){ if(!half) measure(); if(!paused && !dragging && half){ track.scrollLeft+=0.45; wrap(); } requestAnimationFrame(loop); })();
+    track.addEventListener('pointerdown', function(e){ paused=true; clearTimeout(rt); if(e.pointerType!=='mouse') return; dragging=true; moved=false; sx=e.clientX; sl=track.scrollLeft; track.style.cursor='grabbing'; e.preventDefault(); });
+    track.addEventListener('pointermove', function(e){ if(!dragging) return; var dx=e.clientX-sx; if(Math.abs(dx)>3) moved=true; track.scrollLeft=sl-dx; wrap(); });
+    function endDrag(){ dragging=false; track.style.cursor='grab'; clearTimeout(rt); rt=setTimeout(function(){ paused=false; },1200); }
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){ track.addEventListener(ev, endDrag); });
+    track.addEventListener('mouseenter', function(){ paused=true; });
+    track.addEventListener('mouseleave', function(){ if(!dragging) paused=false; });
+    track.querySelectorAll('img').forEach(function(im){ im.addEventListener('click', function(e){ if(moved) e.preventDefault(); }); });
+  })();
 </script>
 </body>
 </html>
