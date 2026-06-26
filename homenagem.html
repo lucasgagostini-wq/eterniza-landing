@@ -203,7 +203,7 @@
     <div class="passo">Quase lá ✨</div>
     <h2 class="serif qtitle">Onde devemos enviar a sua<br>homenagem finalizada?</h2>
     <p class="muted center small" style="margin-top:-12px">De forma segura e privada, no seu WhatsApp.</p>
-    <input id="zap" type="tel" inputmode="numeric" placeholder="(DDD) 90000-0000" style="margin-top:16px" />
+    <input id="zap" type="tel" inputmode="numeric" oninput="maskZap(this)" maxlength="16" placeholder="(11) 99999-9999" style="margin-top:16px" />
     <div class="err" id="zapErr" role="alert" aria-live="polite"></div>
     <button class="btn btn-green" style="margin-top:14px" onclick="saveZap()">Receber homenagem no WhatsApp</button>
     <button class="btn btn-ghost" onclick="go(3)">← voltar</button>
@@ -360,10 +360,19 @@
     });
   })();
 
+  // máscara: só números, máx 11 dígitos, formata (XX) XXXXX-XXXX na hora
+  function maskZap(el){
+    var d=(el.value||'').replace(/\D/g,'').slice(0,11);
+    if(d.length>7) el.value='('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7);
+    else if(d.length>2) el.value='('+d.slice(0,2)+') '+d.slice(2);
+    else el.value=d;
+  }
   function saveZap(){
     var el=document.getElementById('zap'), err=document.getElementById('zapErr');
     var v=(el.value||'').replace(/\D/g,'');
-    if(v.length<10){ err.textContent='Coloque um número válido com DDD (ex.: 11 99999-9999).'; el.focus(); return; }
+    if(v.length<10||v.length>11){ err.textContent='Coloque o número com DDD (ex.: 11 99999-9999).'; el.focus(); return; }
+    var ddd=parseInt(v.slice(0,2),10), distintos=new Set(v.split('')).size;
+    if(ddd<11||distintos<3){ err.textContent='Esse número não parece válido. Confira e tente de novo. 🙏'; el.focus(); return; }
     err.textContent=''; state.whatsapp=v; go(5);
   }
 
