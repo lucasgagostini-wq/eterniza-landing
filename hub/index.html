@@ -36,9 +36,12 @@
     .grid-texture{background-color:#0a0a0a;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:32px 32px}
     ::selection{background:rgba(34,197,94,.22);color:#fff}
     .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-    .scrollbar-hide{scrollbar-width:none}.scrollbar-hide::-webkit-scrollbar{display:none}
-    /* scroll funciona, barra invisível em tudo (pedido do Lucas) */
-    *{scrollbar-width:none;-ms-overflow-style:none}::-webkit-scrollbar{width:0;height:0;display:none}
+    /* Scroll discreto nos painéis do Hub */
+    *{scrollbar-width:thin;scrollbar-color:rgba(216,180,120,.34) transparent;-ms-overflow-style:auto}
+    ::-webkit-scrollbar{width:8px;height:8px;display:block}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:rgba(216,180,120,.24);border-radius:999px}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(216,180,120,.38)}
     a{color:inherit;text-decoration:none}
     button,input,textarea,select{font:inherit}
     input,textarea,select{width:100%;background:#0f0f0f;border:1px solid var(--line-hard);border-radius:10px;padding:10px 12px;color:var(--fg);font-size:14px;outline:none}
@@ -94,7 +97,7 @@
     .filters .f.on{background:linear-gradient(180deg,rgba(34,197,94,.18),rgba(34,197,94,.07));border-color:var(--accent-border);color:#f0fdf4}
     .filters .f .c{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.05);color:#9a9a9a}
     .filters .f.on .c{background:rgba(4,19,10,.4);color:var(--accent-lt)}
-    .feed-list{flex:1;overflow-y:auto;padding:8px 0}
+    .feed-list{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:8px 0}
 
     .feed-card{margin:7px 12px;padding:12px 13px;border-radius:13px;cursor:pointer;background:#121212;border:1px solid #222;border-left:1px solid #222;animation:feedin .3s ease both}
     .feed-card:hover{background:#161616}
@@ -106,7 +109,7 @@
     .feed-card .for b{color:var(--gold-soft);font-weight:500}
     .feed-card .tags{display:flex;flex-wrap:wrap;gap:5px}
 
-    .detail{flex:1;overflow-y:auto;min-width:0}
+    .detail{flex:1;overflow-y:auto;overscroll-behavior:contain;min-width:0}
     .detail-inner{padding:14px 22px 22px;max-width:920px;margin:0 auto}
     .back{display:none;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);background:transparent;border:1px solid var(--line-hard);border-radius:9px;padding:7px 11px;cursor:pointer;margin-bottom:14px}
 
@@ -253,7 +256,7 @@
     .feed-dates .fd-range{display:flex;align-items:center;gap:4px;color:#6f6f6f;font-size:11px}
     .feed-dates .fd-range .dt-in{padding:3px 5px;font-size:11px}
     .feed-dates .fd-range .arr{opacity:.55}
-    .ana-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:15px;padding:18px 22px;width:100%;max-width:1140px;margin:0 auto;overflow:hidden}
+    .ana-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:15px;padding:18px 22px 42px;width:100%;max-width:1140px;margin:0 auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
     .ana-loading{margin:auto;color:var(--muted);font-size:14px;text-align:center}
     /* KPIs (pedidos no período) */
     .kpis{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
