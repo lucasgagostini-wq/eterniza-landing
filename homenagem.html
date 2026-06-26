@@ -40,6 +40,9 @@
   .btn-ghost{background:transparent;color:var(--muted);box-shadow:none;font-weight:600;font-size:14px;padding:12px}
   .vagas{background:var(--bnr);border:1px solid var(--bnr-b);border-radius:13px;padding:11px 14px;text-align:center;font-size:13.5px;font-weight:600;color:var(--gold-d);margin:18px 0 22px}
   .hero{padding:6px 0 30px;text-align:center}
+  .hero h1{font-size:clamp(31px,8.6vw,38px);line-height:1.12;margin-bottom:.32em}
+  @keyframes pulseCta{0%,100%{transform:scale(1);box-shadow:0 10px 26px rgba(176,144,79,.45)}50%{transform:scale(1.04);box-shadow:0 16px 38px rgba(176,144,79,.62)}}
+  .pulse{animation:pulseCta 1.7s ease-in-out infinite}
   .hero .sub{font-size:16.5px;color:var(--body);margin:0 auto 20px;max-width:400px}
   .media{border-radius:20px;overflow:hidden;box-shadow:var(--shadow);margin:0 auto 20px;max-width:300px;background:#000;aspect-ratio:9/16}
   .media video{display:block;width:100%;height:100%;object-fit:cover}
@@ -162,14 +165,14 @@
   <section class="step active" data-step="0">
     <div class="vagas">🕐 Restam <b>2 vagas com desconto</b> hoje</div>
     <div class="hero">
-      <h1 class="serif">Um abraço de paz<br>para acalmar a saudade.</h1>
-      <p class="sub">Transforme a foto de quem deixou saudade em um <b class="gold">vídeo emocionante</b> de homenagem.</p>
+      <h1 class="serif">Um abraço de paz para acalmar a saudade.</h1>
+      <p class="sub">Transforme a foto de quem deixou saudade em um <b class="gold">vídeo emocionante</b> de homenagem, com uma <b class="gold">música personalizada</b>.</p>
       <div class="media">
         <video autoplay muted loop playsinline preload="metadata" poster="/videos/teaser.jpg"><source src="/videos/teaser.mp4" type="video/mp4"></video>
       </div>
-      <button class="btn btn-gold" onclick="go(1)">Fazer simulação gratuita 🤍</button>
+      <button class="btn btn-gold pulse" onclick="go(1)">Fazer simulação gratuita 🤍</button>
       <div class="sub-cta">(Veja sua prévia gratuita em instantes)</div>
-      <div class="stars"><span class="s">★</span> 4,9 · 3.247 famílias já se emocionaram</div>
+      <div class="stars"><span class="s">★</span> 4,9 · 6.247 famílias já se emocionaram</div>
       <div class="trust">🛡️ Rápido, seguro e feito com muito respeito.</div>
       <div class="how">
         <div class="ttl">Como funciona?</div>
