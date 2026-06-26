@@ -7,6 +7,8 @@ const STEPS = new Set([
   'pagina_venda', 'cta_clicou',
   'g1_abertura', 'g2_porquem', 'g3_nome', 'g4_memoria', 'g5_desejo', 'g6_video', 'g7_foto', 'g8_whatsapp',
   'go_cakto', 'go_yampi', // A/B de gateway: atribuição (quantos foram pra cada checkout)
+  // funil /homenagem (prévia inline, sem bot)
+  'h_hero', 'h_quiz', 'h_nome', 'h_memoria', 'h_whatsapp', 'h_foto', 'h_previa', 'h_checkout',
 ]);
 
 module.exports = async (req, res) => {
