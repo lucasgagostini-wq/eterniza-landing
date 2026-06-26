@@ -171,7 +171,7 @@
     </div>
   </section>
 
-  <!-- 1 · Q1 -->
+  <!-- 1 · Q1 PRA QUEM -->
   <section class="step" data-step="1">
     <div class="passo">Passo 1 de 3</div>
     <h2 class="serif qtitle">Quem é a estrela que<br>brilha no céu hoje?</h2>
@@ -179,30 +179,40 @@
     <button class="btn btn-ghost" onclick="go(0)">← voltar</button>
   </section>
 
-  <!-- 2 · Q2 lembrança -->
+  <!-- 2 · Q2 NOME -->
   <section class="step" data-step="2">
     <div class="passo">Passo 2 de 3</div>
-    <h2 class="serif qtitle" id="q2title">Qual é a lembrança que mais<br>aquece o seu coração?</h2>
-    <textarea id="memoria" placeholder="Ex.: o cafézinho da tarde, o abraço apertado, aquele jeito de rir…"></textarea>
-    <button class="btn btn-gold" style="margin-top:14px" onclick="go(3)">Continuar</button>
-    <button class="btn btn-ghost" onclick="go(3)">pular essa</button>
+    <h2 class="serif qtitle">Qual era o nome dele(a)?</h2>
+    <p class="muted center small" style="margin-top:-12px">O nome vai em destaque na homenagem. 🤍</p>
+    <input id="nome" type="text" autocomplete="off" placeholder="Ex.: Jorge" style="margin-top:16px" />
+    <div class="err" id="nomeErr" role="alert" aria-live="polite"></div>
+    <button class="btn btn-gold" style="margin-top:14px" onclick="saveNome()">Continuar</button>
+    <button class="btn btn-ghost" onclick="go(1)">← voltar</button>
   </section>
 
-  <!-- 3 · Q3 WHATSAPP -->
+  <!-- 3 · Q3 MEMÓRIA -->
   <section class="step" data-step="3">
     <div class="passo">Passo 3 de 3</div>
+    <h2 class="serif qtitle" id="memoTitle">Qual lembrança mais<br>aquece o seu coração?</h2>
+    <div id="optsMemo"></div>
+    <button class="btn btn-ghost" onclick="go(2)">← voltar</button>
+  </section>
+
+  <!-- 4 · WHATSAPP -->
+  <section class="step" data-step="4">
+    <div class="passo">Quase lá ✨</div>
     <h2 class="serif qtitle">Onde devemos enviar a sua<br>homenagem finalizada?</h2>
     <p class="muted center small" style="margin-top:-12px">De forma segura e privada, no seu WhatsApp.</p>
     <input id="zap" type="tel" inputmode="numeric" placeholder="(DDD) 90000-0000" style="margin-top:16px" />
     <div class="err" id="zapErr" role="alert" aria-live="polite"></div>
     <button class="btn btn-green" style="margin-top:14px" onclick="saveZap()">Receber homenagem no WhatsApp</button>
-    <button class="btn btn-ghost" onclick="go(2)">← voltar</button>
+    <button class="btn btn-ghost" onclick="go(3)">← voltar</button>
   </section>
 
-  <!-- 4 · UPLOAD -->
-  <section class="step" data-step="4">
-    <h2 class="serif qtitle" style="margin-top:24px">A fotografia que guarda<br>este momento.</h2>
-    <p class="muted center" id="upHint" style="margin-top:-12px;font-size:15px">Toque abaixo para escolher na sua galeria a foto mais bonita dessa pessoa especial.</p>
+  <!-- 5 · UPLOAD -->
+  <section class="step" data-step="5">
+    <h2 class="serif qtitle" style="margin-top:24px">A foto que guarda<br>esse momento.</h2>
+    <p class="muted center" style="margin-top:-12px;font-size:15px">Escolha na sua galeria a foto mais bonita dessa pessoa especial.</p>
     <label class="drop" for="file" style="margin-top:18px">
       <div class="ic">🖼️</div>
       <div style="font-weight:800;margin-top:8px;color:var(--ink);letter-spacing:.3px">ESCOLHER FOTO DA GALERIA</div>
@@ -211,25 +221,24 @@
     <input id="file" type="file" accept="image/*" class="hidden" onchange="onFile(event)" />
     <div class="tip">💡 <b>Dica importante:</b> escolha uma foto onde apareça <span id="dicaNome">essa pessoa</span>, com o rosto bem de frente e claro, sem muitas pessoas ao redor.</div>
     <p class="small muted center">🔒 Sua foto será tratada com o máximo de respeito e privacidade.</p>
-    <button class="btn btn-ghost" onclick="go(3)">← voltar</button>
+    <button class="btn btn-ghost" onclick="go(4)">← voltar</button>
   </section>
 
-  <!-- 5 · LOADING (webm do Reviva) -->
-  <section class="step" data-step="5">
+  <!-- 6 · LOADING (webm do Reviva) -->
+  <section class="step" data-step="6">
     <div class="load">
       <video autoplay muted loop playsinline><source src="/loading.webm" type="video/webm"></video>
-      <h2 class="serif" style="font-size:21px" id="loadTitle">Criando a sua prévia…</h2>
+      <h2 class="serif" style="font-size:21px" id="loadTitle">Criando a sua homenagem…</h2>
       <div class="loadmsg" id="loadMsg">Recebendo a foto com muito carinho…</div>
       <div class="bar"><i id="loadBar"></i></div>
     </div>
   </section>
 
-  <!-- 6 · REVELAÇÃO + CHECKOUT -->
-  <section class="step" data-step="6">
-    <h2 class="serif qtitle" id="revTitle" style="margin-top:18px">Uma prévia da sua homenagem</h2>
+  <!-- 7 · REVELAÇÃO + CHECKOUT -->
+  <section class="step" data-step="7">
+    <h2 class="serif qtitle" id="revTitle" style="margin-top:18px">A prévia da sua homenagem</h2>
     <p class="muted center" style="margin-top:-14px;font-size:15px">Imagina isso em vídeo, com música. 🎵</p>
     <div class="reveal-img" style="margin-top:14px">
-      <div class="badge">PRIMEIROS TRAÇOS · ANTES DOS RETOQUES</div>
       <img id="revImg" alt="Prévia da homenagem" />
     </div>
     <div class="note">✨ <b>Esse é só o começo do trabalho.</b> Após o pagamento, nossos artistas finalizam cada detalhe do rosto, das transições e da música — e em até 24h você recebe o <b>vídeo no seu WhatsApp</b>.</div>
@@ -297,7 +306,7 @@
 <script>
   var API = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'https://eternizamemori.site/api/preview' : '/api/preview';
   var CHECKOUT = 'https://eternizamemori.site/ir-checkout.html';
-  var state = { quem:'', ref:'', memoria:'', whatsapp:'', fotoB64:'', previewUrl:'' };
+  var state = { quem:'', ref:'', nome:'', memoria:'', frase:'', whatsapp:'', fotoB64:'', previewUrl:'' };
 
   function go(n){
     document.querySelectorAll('.step').forEach(function(s){ s.classList.toggle('active', +s.dataset.step===n); });
@@ -307,31 +316,55 @@
   // scroll-reveal: blocos da revelação sobem suave ao entrar na tela
   var _io=('IntersectionObserver' in window && !(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))
     ? new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); _io.unobserve(e.target); } }); },{threshold:.1,rootMargin:'0px 0px -6% 0px'}) : null;
-  function armReveal(){ if(!_io) return; document.querySelectorAll('[data-step="6"] .firstv,[data-step="6"] .reserva,[data-step="6"] .card,[data-step="6"] .sect,[data-step="6"] .provas,[data-step="6"] .gbox,[data-step="6"] details.faq').forEach(function(el){ el.classList.add('reveal-up'); _io.observe(el); }); }
+  function armReveal(){ if(!_io) return; document.querySelectorAll('[data-step="7"] .firstv,[data-step="7"] .reserva,[data-step="7"] .card,[data-step="7"] .sect,[data-step="7"] .provas,[data-step="7"] .gbox,[data-step="7"] details.faq').forEach(function(el){ el.classList.add('reveal-up'); _io.observe(el); }); }
 
+  // Q1 · pra quem
   var QUEM = [['Minha Mãe','sua mãe'],['Meu Pai','seu pai'],['Meu Companheiro(a)','seu companheiro(a)'],['Meu Filho(a)','seu filho(a)'],['Meu Irmão(ã)','seu irmão(ã)'],['Outro familiar/amigo','quem você ama']];
   (function(){
     var box=document.getElementById('optsQuem');
     QUEM.forEach(function(o){
       var b=document.createElement('button'); b.className='opt';
       b.innerHTML='<span class="radio"></span> '+o[0];
-      b.onclick=function(){
-        state.quem=o[0]; state.ref=o[1];
-        document.getElementById('q2title').innerHTML='Qual é a lembrança de '+o[1]+'<br>que mais aquece o seu coração?';
-        document.getElementById('dicaNome').textContent=o[1];
-        go(2);
-      };
+      b.onclick=function(){ state.quem=o[0]; state.ref=o[1]; go(2); };
       box.appendChild(b);
     });
   })();
 
-  document.getElementById('memoria').addEventListener('input',function(){ state.memoria=this.value; });
+  // Q2 · nome do ente querido
+  function saveNome(){
+    var el=document.getElementById('nome'), err=document.getElementById('nomeErr');
+    var v=(el.value||'').trim();
+    if(v.length<2){ err.textContent='Digite o nome dele(a) pra personalizar a homenagem.'; el.focus(); return; }
+    err.textContent=''; state.nome=v;
+    document.getElementById('memoTitle').innerHTML='Qual lembrança de '+v+' mais<br>aquece o seu coração?';
+    document.getElementById('dicaNome').textContent=v;
+    document.getElementById('revTitle').textContent='A prévia da homenagem de '+v;
+    go(3);
+  }
+
+  // Q3 · memória → cada opção tem a frase pronta que vai no poster
+  var MEMO = [
+    ['😊','O sorriso contagiante','O sorriso contagiante continua vivo em nossos corações.'],
+    ['🤗','O abraço que me acolhia','O abraço que me acolhia continua vivo em nossos corações.'],
+    ['🙏','A fé inabalável','Sua fé inabalável continua viva em nós.'],
+    ['💬','Os conselhos e a sabedoria','Seus conselhos e sua sabedoria ficam para sempre.'],
+    ['💞','O jeito de cuidar de todos','O carinho de cuidar de todos nunca será esquecido.']
+  ];
+  (function(){
+    var box=document.getElementById('optsMemo');
+    MEMO.forEach(function(o){
+      var b=document.createElement('button'); b.className='opt';
+      b.innerHTML='<span style="font-size:20px">'+o[0]+'</span> '+o[1];
+      b.onclick=function(){ state.memoria=o[1]; state.frase=o[2]; go(4); };
+      box.appendChild(b);
+    });
+  })();
 
   function saveZap(){
     var el=document.getElementById('zap'), err=document.getElementById('zapErr');
     var v=(el.value||'').replace(/\D/g,'');
     if(v.length<10){ err.textContent='Coloque um número válido com DDD (ex.: 11 99999-9999).'; el.focus(); return; }
-    err.textContent=''; state.whatsapp=v; go(4);
+    err.textContent=''; state.whatsapp=v; go(5);
   }
 
   function onFile(e){
@@ -353,15 +386,16 @@
     rd.readAsDataURL(f);
   }
 
-  var MSGS=['Recebendo a foto com muito carinho…','Estamos preparando tudo para você…','Criando a prévia da homenagem…','Vestindo de paz e luz…','Quase pronto. Preparando a revelação…'];
+  var MSGS=['Recebendo a foto com muito carinho…','Estamos preparando a homenagem…','Compondo a arte com Cristo…','Escrevendo o nome em ouro…','Quase pronto. Preparando a revelação…'];
   function gerar(){
-    if(state.ref){ document.getElementById('loadTitle').textContent='Criando a prévia de '+state.ref+'…'; document.getElementById('revTitle').textContent='A prévia da homenagem de '+state.ref; }
-    go(5);
+    if(state.nome){ document.getElementById('loadTitle').textContent='Criando a homenagem de '+state.nome+'…'; }
+    go(6);
     var i=0, pct=6;
     var bar=document.getElementById('loadBar'), msg=document.getElementById('loadMsg');
     bar.style.width=pct+'%';
     var t=setInterval(function(){ i=(i+1)%MSGS.length; msg.textContent=MSGS[i]; pct=Math.min(92,pct+7); bar.style.width=pct+'%'; },2600);
-    fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fotoB64:state.fotoB64,quem:state.quem,memoria:state.memoria})})
+    var rel = state.quem==='Outro familiar/amigo' ? '' : state.quem;
+    fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fotoB64:state.fotoB64,nome:state.nome,quem:rel,frase:state.frase,memoria:state.memoria,nowm:true})})
     .then(function(r){return r.json();})
     .then(function(j){
       clearInterval(t);
@@ -369,10 +403,10 @@
       state.previewUrl=j.previewUrl; bar.style.width='100%';
       armReveal();
       var img=document.getElementById('revImg');
-      img.onload=function(){ var w=document.querySelector('.reveal-img'); if(w) w.classList.add('loaded'); go(6); };
-      img.onerror=function(){ go(6); };
+      img.onload=function(){ var w=document.querySelector('.reveal-img'); if(w) w.classList.add('loaded'); go(7); };
+      img.onerror=function(){ go(7); };
       img.src=j.previewUrl;
-      setTimeout(function(){ if(document.querySelector('.step.active').dataset.step!=='6') go(6); },1400);
+      setTimeout(function(){ if(document.querySelector('.step.active').dataset.step!=='7') go(7); },1400);
     })
     .catch(function(){
       clearInterval(t);
@@ -382,7 +416,7 @@
   }
 
   function checkout(){
-    location.href = CHECKOUT + '?nome=' + encodeURIComponent(state.quem||'') + (state.whatsapp?'&phone='+encodeURIComponent(state.whatsapp):'');
+    location.href = CHECKOUT + '?nome=' + encodeURIComponent(state.nome||'') + (state.whatsapp?'&phone='+encodeURIComponent(state.whatsapp):'');
   }
 </script>
 </body>
