@@ -13,17 +13,39 @@ const OR_MODEL = process.env.OPENROUTER_IMAGE_MODEL || 'google/gemini-2.5-flash-
 const BUCKET = 'previas';
 const TOKEN = (process.env.PREVIEW_TOKEN || process.env.CAKTO_SECRET || '').trim();
 
-// Prompt da prévia (reverse-engineered da saída do RevivaPic: reencontro na escadaria do céu).
-// Pode ser sobrescrito sem mexer no código via env PREVIEW_PROMPT (pra tunar fino na Vercel).
-const PROMPT = (process.env.PREVIEW_PROMPT || `Using the person in the provided photo, create a deeply emotional, photorealistic memorial tribute image in a vertical 9:16 portrait orientation.
+// Aspecto do poster de homenagem (referências são ~4:5 retrato).
+const AR = process.env.PREVIEW_AR || '4:5';
 
-THE PERSON (most important): Recreate this exact person as a FULL-BODY figure standing calmly and facing forward, with a serene peaceful smile and one hand gently raised in a soft wave of greeting. Preserve their FACE, facial features, skin tone, hair, age and overall likeness with perfect fidelity — they must remain instantly recognizable as the very same person from the photo. If the photo only shows the head and shoulders, naturally and seamlessly extend them to a realistic full body.
+// Template do prompt do POSTER de homenagem. {NOME} {REL} {FRASE} são preenchidos com os dados do funil.
+// Sobrescrevível por env PREVIEW_PROMPT (mantenha os placeholders {NOME}/{REL}/{FRASE}).
+const PROMPT_TPL = (process.env.PREVIEW_PROMPT || `Create a premium, deeply emotional Brazilian memorial tribute poster ("homenagem"), vertical 4:5 portrait.
 
-CLOTHING — VERY IMPORTANT: the person MUST wear a PURE WHITE, flowing, floor-length heavenly robe (a simple, luminous white gown/tunic) symbolizing peace and eternal rest. COMPLETELY REPLACE whatever clothes appear in the original photo — do NOT keep their shirt, dress, blouse, prints, patterns or colors. Their entire outfit must be solid, clean WHITE, draping elegantly and naturally. Keep only the face, hair and body of the person; everything they wear becomes the white robe.
+THE PERSON (most important): Use the person from the provided photo. Preserve their face, features, hair and likeness with PERFECT fidelity — they must remain instantly recognizable as the same person. Show them from the chest up, calm and serene, looking gently toward the viewer, rendered in a warm soft golden sepia tone, beautifully lit.
 
-THE SCENE: Place the person in the lower-center foreground, at the foot of a grand white marble staircase with elegant golden railings that ascends gently into soft white clouds toward heaven. At the very top of the staircase stands Jesus Christ in a flowing white robe, arms open in a warm loving welcome, bathed in radiant golden light beaming down from above. Soft billowing clouds frame both sides, calm blue sky, warm divine golden light over everything.
+SCENE: Behind the person, a luminous golden stairway ascends into heaven; at the top stands Jesus Christ in flowing white robes with open, welcoming arms, bathed in warm divine golden light among soft glowing clouds. Elegant white lilies and delicate golden flowers decorate the lower corners. An ornate golden filigree border frames the entire poster.
 
-STYLE: Photorealistic and cinematic, serene, sacred and celestial — a comforting heavenly reunion. Dignified and deeply emotional. Sharp, faithful focus on the person's face. Absolutely NO text, NO watermark, NO logo and NO caption anywhere in the image.`).trim();
+TEXT — render the following Brazilian Portuguese text, correctly spelled, in elegant luminous GOLD typography, well composed and NOT overlapping the person's face:
+- a small gold serif line at the top: "Em memória de"
+- the name in large elegant gold cursive calligraphy: "{NOME}"
+- just below it, in refined gold serif: "{REL}"
+- a heartfelt memorial sentence in elegant dark serif: "{FRASE}"
+- at the very bottom, a small golden ribbon banner with a little white dove, reading: "Prévia da homenagem"
+
+STYLE: sacred, warm, comforting, timeless and tasteful. Photorealistic face, painterly heavenly background, ornate and elegant. High quality.`).trim();
+
+function buildFrase(memoria) {
+  var m = (memoria || '').toString().trim();
+  if (!m) return 'Sua memória vive para sempre em nossos corações.';
+  if (/cora[çc][õo]|para sempre|saudade|etern/i.test(m)) return m;       // já é frase completa
+  if (m.length <= 46) return m + ' continua vivo em nossos corações.';   // completa memória curta
+  return m;
+}
+function buildPrompt(body) {
+  var NOME = (body.nome || '').toString().trim() || 'quem partiu';
+  var REL = (body.quem || body.relacao || '').toString().trim();
+  var FRASE = (body.frase || '').toString().trim() || buildFrase(body.memoria);
+  return PROMPT_TPL.replace(/\{NOME\}/g, NOME).replace(/\{REL\}/g, REL).replace(/\{FRASE\}/g, FRASE).trim();
+}
 
 const SBH = (extra) => ({ apikey: KEY, Authorization: `Bearer ${KEY}`, ...(extra || {}) });
 
@@ -37,13 +59,13 @@ async function fetchAsBase64(url) {
   return { base64: buf.toString('base64'), mime };
 }
 
-async function callGemini(base64, mime) {
+async function callGemini(base64, mime, prompt) {
   const body = {
     contents: [{ role: 'user', parts: [
       { inlineData: { mimeType: mime, data: base64 } },
-      { text: PROMPT },
+      { text: prompt },
     ] }],
-    generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '9:16' } },
+    generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: AR } },
   };
   // Chave vai no header x-goog-api-key (as keys novas "AQ." NÃO funcionam mais com ?key= na URL).
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
@@ -63,13 +85,13 @@ async function callGemini(base64, mime) {
   return { base64: inl.data, mime: inl.mimeType || inl.mime_type || 'image/png' };
 }
 
-async function callOpenRouter(base64, mime) {
+async function callOpenRouter(base64, mime, prompt) {
   const dataUrl = `data:${mime};base64,${base64}`;
   const body = {
     model: OR_MODEL,
     modalities: ['image', 'text'], // pede saída de IMAGEM (senão volta só texto)
     messages: [{ role: 'user', content: [
-      { type: 'text', text: PROMPT },
+      { type: 'text', text: prompt },
       { type: 'image_url', image_url: { url: dataUrl } },
     ] }],
   };
@@ -180,8 +202,10 @@ module.exports = async (req, res) => {
     } else {
       src = await fetchAsBase64(photoUrl);
     }
-    const gen = provider === 'openrouter' ? await callOpenRouter(src.base64, src.mime) : await callGemini(src.base64, src.mime);
-    const wm = await applyWatermark(gen.base64, gen.mime);
+    const prompt = buildPrompt(body);
+    const gen = provider === 'openrouter' ? await callOpenRouter(src.base64, src.mime, prompt) : await callGemini(src.base64, src.mime, prompt);
+    const noWm = q.nowm === '1' || q.nowm === 'true' || body.nowm === true || body.nowm === 1;
+    const wm = noWm ? gen : await applyWatermark(gen.base64, gen.mime);
     const previewUrl = await uploadToStorage(wm.base64, wm.mime);
     console.log('[preview] ok (' + provider + ') ->', previewUrl);
     return res.status(200).json({ ok: true, previewUrl, provider });
