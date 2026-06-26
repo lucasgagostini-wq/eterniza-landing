@@ -309,7 +309,7 @@
     <div class="reserva">🕯️ Sua vaga na fila de edição está reservada · entrega em até 24h</div>
     <div class="card">
       <h3 id="offerTitle" class="center" style="font-size:19.5px;font-weight:700;letter-spacing:-.01em">Quanto você pagaria para rever quem partiu mais uma vez?</h3>
-      <div class="recebe">Feliz e com a homenagem que ela merecia</div>
+      <div class="recebe" id="offerRecebe">Feliz e com a homenagem que ela merecia</div>
       <div class="stk"><div class="si"><span class="se">🎬</span><div><b>Vídeo da homenagem</b><span>o reencontro com Cristo em movimento, com transições suaves</span></div></div><div class="sv">R$147</div></div>
       <div class="stk"><div class="si"><span class="se">🎵</span><div><b>Música personalizada</b><span>uma canção feita pra essa pessoa, com a sua história</span></div></div><div class="sv">R$70</div></div>
       <div class="stk"><div class="si"><span class="se">🖼️</span><div><b>Bônus: Arte com Cristo</b><span>a imagem final retocada, sem marca d'água, pra imprimir e guardar</span></div></div><div class="sv">R$40</div></div>
@@ -391,13 +391,13 @@
   function armReveal(){ if(!_io) return; document.querySelectorAll('[data-step="7"] .firstv,[data-step="7"] .reserva,[data-step="7"] .card,[data-step="7"] .sect,[data-step="7"] .provas,[data-step="7"] .gbox,[data-step="7"] details.faq').forEach(function(el){ el.classList.add('reveal-up'); _io.observe(el); }); }
 
   // Q1 · pra quem
-  var QUEM = [['Minha Mãe','sua mãe'],['Meu Pai','seu pai'],['Meu Companheiro(a)','seu companheiro(a)'],['Meu Filho(a)','seu filho(a)'],['Meu Irmão(ã)','seu irmão(ã)'],['Outro familiar/amigo','quem você ama']];
+  var QUEM = [['Minha Mãe','sua mãe','ela merecia'],['Meu Pai','seu pai','ele merecia'],['Meu Companheiro(a)','seu companheiro(a)','merecia'],['Meu Filho(a)','seu filho(a)','merecia'],['Meu Irmão(ã)','seu irmão(ã)','merecia'],['Outro familiar/amigo','quem você ama','merecia']];
   (function(){
     var box=document.getElementById('optsQuem');
     QUEM.forEach(function(o){
       var b=document.createElement('button'); b.className='opt';
       b.innerHTML='<span class="radio"></span> '+o[0];
-      b.onclick=function(){ state.quem=o[0]; state.ref=o[1]; var ot=document.getElementById('offerTitle'); if(ot) ot.textContent='Quanto você pagaria para rever '+o[1]+' mais uma vez?'; go(2); };
+      b.onclick=function(){ state.quem=o[0]; state.ref=o[1]; var ot=document.getElementById('offerTitle'); if(ot) ot.textContent='Quanto você pagaria para rever '+o[1]+' mais uma vez?'; var rc=document.getElementById('offerRecebe'); if(rc) rc.textContent='Feliz e com a homenagem que '+o[2]; go(2); };
       box.appendChild(b);
     });
   })();
