@@ -13,12 +13,12 @@ const OR_MODEL = process.env.OPENROUTER_IMAGE_MODEL || 'google/gemini-2.5-flash-
 const BUCKET = 'previas';
 const TOKEN = (process.env.PREVIEW_TOKEN || process.env.CAKTO_SECRET || '').trim();
 
-// Aspecto do poster de homenagem (referências são ~4:5 retrato).
-const AR = process.env.PREVIEW_AR || '4:5';
+// Aspecto: escada (em teste) = 9:16; poster = 4:5.
+const AR = process.env.PREVIEW_AR || '9:16';
 
-// Template do prompt do POSTER de homenagem. {NOME} {REL} {FRASE} são preenchidos com os dados do funil.
-// Sobrescrevível por env PREVIEW_PROMPT (mantenha os placeholders {NOME}/{REL}/{FRASE}).
-const PROMPT_TPL = (process.env.PREVIEW_PROMPT || `Create a premium, deeply emotional Brazilian memorial tribute poster ("homenagem"), vertical 4:5 portrait.
+// ⚗️ POSTER (com texto "Em memória de [nome]", 4:5) — GUARDADO p/ testar no futuro.
+// Pra ATIVAR o poster: em buildPrompt trocar PROMPT_TPL por POSTER_TPL, e o AR acima por '4:5'.
+const POSTER_TPL = `Create a premium, deeply emotional Brazilian memorial tribute poster ("homenagem"), vertical 4:5 portrait.
 
 THE PERSON (most important): Use the person from the provided photo. Preserve their face, features, hair and likeness with PERFECT fidelity — they must remain instantly recognizable as the same person. Show them from the chest up, calm and serene, looking gently toward the viewer, rendered in a warm soft golden sepia tone, beautifully lit.
 
@@ -31,7 +31,19 @@ TEXT — render the following Brazilian Portuguese text, correctly spelled, in e
 - a heartfelt memorial sentence in elegant dark serif: "{FRASE}"
 - at the very bottom, a small golden ribbon banner with a little white dove, reading: "Prévia da homenagem"
 
-STYLE: sacred, warm, comforting, timeless and tasteful. Photorealistic face, painterly heavenly background, ornate and elegant. High quality.`).trim();
+STYLE: sacred, warm, comforting, timeless and tasteful. Photorealistic face, painterly heavenly background, ornate and elegant. High quality.`;
+
+// ATIVO (em teste): pessoa em frente à escada do céu, SEM texto (9:16). {NOME}/{REL}/{FRASE} são ignorados neste estilo.
+// Sobrescrevível por env PREVIEW_PROMPT.
+const PROMPT_TPL = (process.env.PREVIEW_PROMPT || `Using the person in the provided photo, create a deeply emotional, photorealistic memorial tribute image in a vertical 9:16 portrait orientation.
+
+THE PERSON (most important): Recreate this exact person as a FULL-BODY figure standing calmly and facing forward, with a serene peaceful smile and one hand gently raised in a soft wave of greeting. Preserve their FACE, facial features, skin tone, hair, age and overall likeness with perfect fidelity — they must remain instantly recognizable as the very same person from the photo. If the photo only shows the head and shoulders, naturally and seamlessly extend them to a realistic full body.
+
+CLOTHING — VERY IMPORTANT: the person MUST wear a PURE WHITE, flowing, floor-length heavenly robe (a simple, luminous white gown/tunic) symbolizing peace and eternal rest. COMPLETELY REPLACE whatever clothes appear in the original photo — do NOT keep their shirt, dress, blouse, prints, patterns or colors. Their entire outfit must be solid, clean WHITE, draping elegantly and naturally. Keep only the face, hair and body of the person; everything they wear becomes the white robe.
+
+THE SCENE: Place the person in the lower-center foreground, at the foot of a grand white marble staircase with elegant golden railings that ascends gently into soft white clouds toward heaven. At the very top of the staircase stands Jesus Christ in a flowing white robe, arms open in a warm loving welcome, bathed in radiant golden light beaming down from above. Soft billowing clouds frame both sides, calm blue sky, warm divine golden light over everything.
+
+STYLE: Photorealistic and cinematic, serene, sacred and celestial — a comforting heavenly reunion. Dignified and deeply emotional. Sharp, faithful focus on the person's face. Absolutely NO text, NO watermark, NO logo and NO caption anywhere in the image.`).trim();
 
 // ⚗️ VARIANTE A TESTAR NO FUTURO (revertida 25/06 p/ manter o prompt validado dos 3 posters):
 // reforço de grafia exata do nome — corta erro tipo "Renán". Pra testar, adicionar este bloco
