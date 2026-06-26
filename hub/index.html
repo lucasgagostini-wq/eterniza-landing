@@ -935,7 +935,7 @@
 
     // ===== painel de análise · dashboard horizontal (auto-refresh próprio) =====
     let anaBuilt=false, anaLastUpdate=0, anaSinceISO=null, anaTimer=null, anaTick=null;
-    let FUNNEL_MODE='bot', lastAnaData=null;
+    let FUNNEL_MODE='bot', lastAnaData=null, lastQuizAbData=null, lastCheckoutAbData=null;
     function setFunnelMode(mode){
       FUNNEL_MODE=mode; anaBuilt=false;
       document.querySelectorAll('.ana-tab').forEach(b=>b.classList.toggle('on',b.id===(mode==='bot'?'tabBot':'tabH')));
@@ -969,6 +969,37 @@
           <span class="ana-base">Cards de cima = pedidos no período · gráfico = sessões rastreadas desde a página de venda (bases diferentes).</span>
           <span class="ana-meta"><span class="live-dot ana-livedot"></span>atualizado <b id="anaAgo">agora</b> · metrificando desde <b id="anaSince">—</b></span>
         </div>
+        <div class="abwrap" id="quizAbWrap" hidden>
+          <h4>🧪 A/B Quiz · Typebot × /homenagem <span class="ab-since" id="quizAbSince"></span></h4>
+          <div class="abgrid">
+            <div class="abcol" id="quizTypebot">
+              <div class="gw">📱 Typebot <small>quiz atual</small></div>
+              <div class="abrow"><span>Mandados</span><b id="qtAssigned">–</b></div>
+              <div class="abrow"><span>Iniciou quiz</span><b id="qtStarted">–</b></div>
+              <div class="abrow"><span>Passou Q1</span><b id="qtQ1">–</b></div>
+              <div class="abrow"><span>WhatsApp</span><b id="qtWhatsapp">–</b></div>
+              <div class="abrow"><span>Foto</span><b id="qtPhoto">–</b></div>
+              <div class="abrow"><span>Checkout</span><b id="qtCheckout">–</b></div>
+              <div class="abrow"><span>Vendas</span><b id="qtPaid">–</b></div>
+              <div class="abrow"><span>Conversão</span><b id="qtConv">–</b></div>
+              <div class="abrow hl"><span>R$ / visitante</span><b id="qtRpv">–</b></div>
+            </div>
+            <div class="abcol" id="quizHomenagem">
+              <div class="gw">🖼️ /homenagem <small>prévia inline</small></div>
+              <div class="abrow"><span>Mandados</span><b id="qhAssigned">–</b></div>
+              <div class="abrow"><span>Iniciou quiz</span><b id="qhStarted">–</b></div>
+              <div class="abrow"><span>Passou Q1</span><b id="qhQ1">–</b></div>
+              <div class="abrow"><span>WhatsApp</span><b id="qhWhatsapp">–</b></div>
+              <div class="abrow"><span>Foto</span><b id="qhPhoto">–</b></div>
+              <div class="abrow"><span>Prévia</span><b id="qhPreview">–</b></div>
+              <div class="abrow"><span>Checkout</span><b id="qhCheckout">–</b></div>
+              <div class="abrow"><span>Vendas</span><b id="qhPaid">–</b></div>
+              <div class="abrow"><span>Conversão</span><b id="qhConv">–</b></div>
+              <div class="abrow hl"><span>R$ / visitante</span><b id="qhRpv">–</b></div>
+            </div>
+          </div>
+          <div class="ab-note" id="quizAbNote"></div>
+        </div>
         <div class="abwrap" id="abWrap" hidden>
           <h4>🧪 A/B Checkout · Cakto × Yampi <span class="ab-since" id="abSince"></span></h4>
           <div class="abgrid">
@@ -994,6 +1025,8 @@
           <div class="ab-note" id="abNote"></div>
         </div>`;
       anaBuilt=true;
+      if(lastQuizAbData) paintQuizAB(lastQuizAbData);
+      if(lastCheckoutAbData) paintAB(lastCheckoutAbData);
     }
 
     function paintFunnel(d){
@@ -1034,6 +1067,7 @@
 
     const AB_MIN_N=10; // amostra mínima por lado antes de cravar vencedor
     function paintAB(d){
+      lastCheckoutAbData=d;
       const ab=d&&d.ab, w=$('abWrap'); if(!w)return;
       if(!ab){ w.hidden=true; return; }
       w.hidden=false;
@@ -1044,7 +1078,7 @@
       set('cAssigned',c.assigned||0); set('cPaid',c.paid||0); set('cRec',c.recuperacao||0); set('cConv',pct(c.conversion)); set('cTicket',money(c.ticket)); set('cRpv',money(c.rev_per_visitor));
       set('yAssigned',y.assigned||0); set('yPaid',y.paid||0); set('yRec',y.recuperacao||0); set('yConv',pct(y.conversion)); set('yTicket',money(y.ticket)); set('yRpv',money(y.rev_per_visitor));
       $('abCakto').classList.remove('win'); $('abYampi').classList.remove('win');
-      document.querySelectorAll('.win-tag').forEach(t=>t.remove());
+      w.querySelectorAll('.win-tag').forEach(t=>t.remove());
       const cv=c.rev_per_visitor||0, yv=y.rev_per_visitor||0;
       let note;
       if((c.assigned||0)<AB_MIN_N||(y.assigned||0)<AB_MIN_N){
@@ -1060,6 +1094,36 @@
       }
       const n=$('abNote'); if(n)n.innerHTML=note;
       const s=$('abSince'); if(s)s.textContent='· desde 24/06 (início do teste)';
+    }
+
+    function paintQuizAB(d){
+      lastQuizAbData=d;
+      const ab=d&&d.quizAb, w=$('quizAbWrap'); if(!w)return;
+      if(!ab){ w.hidden=true; return; }
+      w.hidden=false;
+      const set=(id,v)=>{const e=$(id); if(e)e.textContent=v;};
+      const money=v=>v==null?'–':('R$ '+Number(v).toFixed(2).replace('.',','));
+      const pct=v=>v==null?'–':(v+'%');
+      const t=ab.typebot||{}, h=ab.homenagem||{};
+      set('qtAssigned',t.assigned||0); set('qtStarted',(t.started||0)+' · '+pct(t.started_rate)); set('qtQ1',t.answered1||0); set('qtWhatsapp',(t.whatsapp||0)+' · '+pct(t.whatsapp_rate)); set('qtPhoto',(t.photo||0)+' · '+pct(t.photo_rate)); set('qtCheckout',(t.checkout||0)+' · '+pct(t.checkout_rate)); set('qtPaid',t.paid||0); set('qtConv',pct(t.conversion)); set('qtRpv',money(t.rev_per_visitor));
+      set('qhAssigned',h.assigned||0); set('qhStarted',(h.started||0)+' · '+pct(h.started_rate)); set('qhQ1',h.answered1||0); set('qhWhatsapp',(h.whatsapp||0)+' · '+pct(h.whatsapp_rate)); set('qhPhoto',(h.photo||0)+' · '+pct(h.photo_rate)); set('qhPreview',h.preview==null?'–':h.preview); set('qhCheckout',(h.checkout||0)+' · '+pct(h.checkout_rate)); set('qhPaid',h.paid||0); set('qhConv',pct(h.conversion)); set('qhRpv',money(h.rev_per_visitor));
+      $('quizTypebot').classList.remove('win'); $('quizHomenagem').classList.remove('win');
+      w.querySelectorAll('.win-tag').forEach(x=>x.remove());
+      const tv=t.rev_per_visitor||0, hv=h.rev_per_visitor||0;
+      let note;
+      if((t.assigned||0)<AB_MIN_N||(h.assigned||0)<AB_MIN_N){
+        note='⏳ Amostra ainda pequena (ideal ~'+AB_MIN_N+'+ cliques por lado). O split já está ativo; deixe rodar antes de decidir.';
+      } else if(Math.abs(tv-hv)<0.01){
+        note='Empate técnico em R$/visitante. Olhe também WhatsApp, foto e checkout antes de mexer no tráfego.';
+      } else {
+        const winId=hv>tv?'quizHomenagem':'quizTypebot', winName=hv>tv?'/homenagem':'Typebot';
+        $(winId).classList.add('win');
+        const tag=document.createElement('span'); tag.className='win-tag'; tag.textContent='🏆 na frente'; $(winId).appendChild(tag);
+        const diff=Math.abs(hv-tv)/Math.max(0.01,Math.min(tv,hv))*100;
+        note='🏆 <b>'+winName+'</b> está gerando ~'+diff.toFixed(0)+'% mais R$/visitante neste recorte.';
+      }
+      const n=$('quizAbNote'); if(n)n.innerHTML=note;
+      const s=$('quizAbSince'); if(s)s.textContent='· CTA da landing dividido 50/50';
     }
 
     function updateAnaAgo(){
@@ -1080,6 +1144,7 @@
       if(silent&&document.hidden)return;
       try{
         const d=await api('analytics',anaParams()); paintFunnel(d); setAnaLive(false);
+        try{ const q=await api('quiz_ab',anaParams()); paintQuizAB(q); }catch(_e){/* A/B quiz é complementar; não quebra a análise */}
         try{ const a=await api('ab',abParams()); paintAB(a); }catch(_e){/* A/B é complementar; não quebra a análise */}
       }
       catch(e){

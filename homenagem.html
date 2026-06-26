@@ -359,8 +359,10 @@
 </main>
 
 <script>
-  // session-id único por aba (persiste em sessionStorage, prefixo 'h-' p/ distinguir do bot)
-  var SID=(function(){var k='etz_sid_h',id=sessionStorage.getItem(k);if(!id){id='h-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);sessionStorage.setItem(k,id);}return id;})();
+  var QS = new URLSearchParams(location.search || '');
+  var START_AT_QUIZ = /^(quiz|1|pergunta)$/i.test(QS.get('start') || '') || QS.get('from') === 'landing_ab';
+  // session-id: quando vem da landing, reaproveita o mesmo SID para costurar o A/B.
+  var SID=(function(){var k='etz_sid_h',incoming=(QS.get('sid')||'').trim().slice(0,80),id=incoming||sessionStorage.getItem(k);if(!id){id='h-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);}try{sessionStorage.setItem(k,id);if(incoming)sessionStorage.setItem('etz_sid',id);}catch(e){}return id;})();
   function track(step){try{fetch('/api/track?sid='+encodeURIComponent(SID)+'&step='+encodeURIComponent(step),{method:'GET'});}catch(e){}}
   function px(ev,params){try{if(window.fbq)fbq('trackCustom',ev,params||{});}catch(e){}}
   function lead(fields){try{fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({},fields,{source:'homenagem',sid:SID}))});}catch(e){}}
@@ -560,8 +562,8 @@
     location.href=CHECKOUT+qs;
   }
 
-  // beacon de carga da página /homenagem
-  track('h_hero');
+  // beacon de carga da página /homenagem. No A/B da landing, começa direto na 1ª pergunta.
+  if(START_AT_QUIZ) go(1); else track('h_hero');
 
   // carrossel de provas: loop infinito suave (dedo no celular, clicar-e-arrastar no mouse)
   // Anti-tremor: UM acumulador float (pos) manda no scrollLeft. SEM listener de 'scroll'

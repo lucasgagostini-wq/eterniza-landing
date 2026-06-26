@@ -1,5 +1,5 @@
 // Backend do Delivery Hub — Eterniza. Protegido por token (ADMIN_TOKEN ou CAKTO_SECRET).
-const { sbSelect, sbUpdate, sbInsert, sbDelete, normalizePhone, SB, KEY } = require('./_lib');
+const { sbSelect, sbUpdate, sbInsert, sbDelete, normalizePhone, getByPath, pick, SB, KEY } = require('./_lib');
 
 const STATUSES = ['briefing_recebido', 'checkout_iniciado', 'recuperacao_pix', 'pago', 'fila_edicao', 'produzindo', 'pronta', 'entregue', 'erro'];
 const RECOVERY = ['nao_contatado', 'contatado', 'sem_resposta', 'convertido', 'descartado'];
@@ -150,6 +150,103 @@ module.exports = async (req, res) => {
         s.revenue = +s.revenue.toFixed(2);
       }
       return res.status(200).json({ ab: out, period: period || null, from: from || null, to: to || null });
+    }
+    // A/B do quiz: CTA da landing -> Typebot vs /homenagem começando direto na 1ª pergunta.
+    if (action === 'quiz_ab') {
+      const from = (req.query.from || '').toString().trim();
+      const to = (req.query.to || '').toString().trim();
+      const period = (req.query.period || '').toString();
+      let f = '';
+      if (from || to) {
+        if (from) f += `&created_at=gte.${encodeURIComponent(from)}`;
+        if (to) f += `&created_at=lt.${encodeURIComponent(to)}`;
+      } else {
+        const hours = period === 'hoje' ? 24 : period === '30d' ? 720 : period === 'tudo' ? null : period === '7d' ? 168 : 168;
+        const since = hours ? new Date(Date.now() - hours * 3600 * 1000).toISOString() : null;
+        if (since) f = `&created_at=gte.${encodeURIComponent(since)}`;
+      }
+
+      const steps = [
+        'go_typebot', 'go_homenagem', 'go_yampi', 'go_cakto',
+        'g1_abertura', 'g2_porquem', 'g7_foto', 'g8_whatsapp',
+        'h_quiz', 'h_nome', 'h_memoria', 'h_whatsapp', 'h_foto', 'h_previa', 'h_checkout',
+      ];
+      const evs = await sbSelect(`funnel_events?select=session_id,step&step=in.(${steps.join(',')})${f}&limit=200000`).catch(() => []);
+      const sets = {};
+      for (const e of (Array.isArray(evs) ? evs : [])) {
+        (sets[e.step] || (sets[e.step] = new Set())).add(e.session_id);
+      }
+      const setOf = (step) => sets[step] || new Set();
+      const countIn = (base, step) => {
+        const target = setOf(step);
+        let n = 0;
+        for (const sid of base) if (target.has(sid)) n++;
+        return n;
+      };
+      const assigned = {
+        typebot: setOf('go_typebot'),
+        homenagem: setOf('go_homenagem'),
+      };
+      const out = {
+        typebot: {
+          assigned: assigned.typebot.size,
+          started: countIn(assigned.typebot, 'g1_abertura'),
+          answered1: countIn(assigned.typebot, 'g2_porquem'),
+          whatsapp: countIn(assigned.typebot, 'g8_whatsapp'),
+          photo: countIn(assigned.typebot, 'g7_foto'),
+          preview: null,
+          checkout: countIn(assigned.typebot, 'go_yampi') + countIn(assigned.typebot, 'go_cakto'),
+          leads: 0, paid: 0, recuperacao: 0, revenue: 0,
+        },
+        homenagem: {
+          assigned: assigned.homenagem.size,
+          started: countIn(assigned.homenagem, 'h_quiz'),
+          answered1: countIn(assigned.homenagem, 'h_nome'),
+          whatsapp: countIn(assigned.homenagem, 'h_whatsapp'),
+          photo: countIn(assigned.homenagem, 'h_foto'),
+          preview: countIn(assigned.homenagem, 'h_previa'),
+          checkout: countIn(assigned.homenagem, 'h_checkout'),
+          leads: 0, paid: 0, recuperacao: 0, revenue: 0,
+        },
+      };
+
+      const extractSid = (o) => {
+        const tp = o.typebot_payload || {};
+        const cp = o.cakto_payload || {};
+        return pick(
+          tp.sid,
+          tp.session_id,
+          tp.sessionId,
+          getByPath(tp, 'queryParams.sid'),
+          getByPath(tp, 'variables.sid'),
+          getByPath(cp, 'resource.metadata.sid'),
+          getByPath(cp, 'metadata.sid'),
+          getByPath(cp, 'data.metadata.sid'),
+        );
+      };
+      const ords = await sbSelect(`orders?select=status,valor,typebot_payload,cakto_payload${f}&limit=100000`).catch(() => []);
+      const PAID = ['pago', 'fila_edicao', 'produzindo', 'pronta', 'entregue'];
+      for (const o of (Array.isArray(ords) ? ords : [])) {
+        const sid = extractSid(o);
+        const side = sid && assigned.homenagem.has(sid) ? 'homenagem' : sid && assigned.typebot.has(sid) ? 'typebot' : null;
+        if (!side) continue;
+        const s = out[side];
+        s.leads++;
+        if (PAID.includes(o.status)) { s.paid++; s.revenue += Number(o.valor) || 0; }
+        else if (o.status === 'recuperacao_pix') s.recuperacao++;
+      }
+      for (const k of ['typebot', 'homenagem']) {
+        const s = out[k];
+        s.started_rate = s.assigned ? +(100 * s.started / s.assigned).toFixed(1) : null;
+        s.whatsapp_rate = s.assigned ? +(100 * s.whatsapp / s.assigned).toFixed(1) : null;
+        s.photo_rate = s.assigned ? +(100 * s.photo / s.assigned).toFixed(1) : null;
+        s.checkout_rate = s.assigned ? +(100 * s.checkout / s.assigned).toFixed(1) : null;
+        s.conversion = s.assigned ? +(100 * s.paid / s.assigned).toFixed(1) : null;
+        s.rev_per_visitor = s.assigned ? +(s.revenue / s.assigned).toFixed(2) : null;
+        s.ticket = s.paid ? +(s.revenue / s.paid).toFixed(2) : null;
+        s.revenue = +s.revenue.toFixed(2);
+      }
+      return res.status(200).json({ quizAb: out, period: period || null, from: from || null, to: to || null });
     }
     if (action === 'update') {
       const status = (req.query.status || '').toString();

@@ -30,6 +30,8 @@
         yampi: { url: 'https://eterniza.pay.yampi.com.br/r/E8VSH1ZWAB', mode: 'metadata' }
       };
       var q = new URLSearchParams(location.search);
+      var originSid = (q.get('sid') || '').trim();
+      var quizVariant = (q.get('ab_quiz') || '').trim();
 
       // --- escolha do gateway ---
       var GATEWAY, abSid = null;
@@ -54,8 +56,8 @@
       }
       // beacon de atribuição (fire-and-forget; não dispara no modo forçado/QA)
       if (forced !== 'cakto' && forced !== 'yampi') {
-        if (!abSid) abSid = 'ab_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-        try { new Image().src = '/api/track?step=go_' + GATEWAY + '&sid=' + encodeURIComponent(abSid) + '&t=' + Date.now(); } catch (e) {}
+        if (!abSid) abSid = originSid || ('ab_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+        try { new Image().src = '/api/track?step=go_' + GATEWAY + '&sid=' + encodeURIComponent(originSid || abSid) + '&t=' + Date.now(); } catch (e) {}
       }
 
       var g = CFG[GATEWAY];
@@ -70,11 +72,15 @@
       if (g.mode === 'metadata') { // Yampi: metadata[chave]=valor -> volta no webhook order.*
         if (phone) parts.push('metadata[bot_phone]=' + encodeURIComponent(phone));
         if (nome) parts.push('metadata[bot_name]=' + encodeURIComponent(nome));
+        if (originSid) parts.push('metadata[sid]=' + encodeURIComponent(originSid));
+        if (quizVariant) parts.push('metadata[ab_quiz]=' + encodeURIComponent(quizVariant));
         if (fbp) parts.push('metadata[fbp]=' + encodeURIComponent(fbp));
         if (fbc) parts.push('metadata[fbc]=' + encodeURIComponent(fbc));
       } else {                     // Cakto: name/phone direto na query (pré-preenche o checkout)
         if (nome) parts.push('name=' + encodeURIComponent(nome));
         if (phone) parts.push('phone=' + encodeURIComponent(phone));
+        if (originSid) parts.push('sid=' + encodeURIComponent(originSid));
+        if (quizVariant) parts.push('ab_quiz=' + encodeURIComponent(quizVariant));
       }
       ['utm_source', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'].forEach(function (k) {
         var v = q.get(k); if (v) parts.push(k + '=' + encodeURIComponent(v));

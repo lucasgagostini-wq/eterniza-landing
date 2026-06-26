@@ -5,6 +5,7 @@ const { sbInsert } = require('./_lib');
 // lista branca de passos (evita lixo no banco)
 const STEPS = new Set([
   'pagina_venda', 'cta_clicou',
+  'go_typebot', 'go_homenagem', // A/B de quiz: atribuição do CTA da landing principal
   'g1_abertura', 'g2_porquem', 'g3_nome', 'g4_memoria', 'g5_desejo', 'g6_video', 'g7_foto', 'g8_whatsapp',
   'go_cakto', 'go_yampi', // A/B de gateway: atribuição (quantos foram pra cada checkout)
   // funil /homenagem (prévia inline, sem bot)
