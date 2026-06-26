@@ -80,6 +80,8 @@
   .hero h1{font-size:clamp(31px,8.6vw,38px);line-height:1.12;margin-bottom:.32em}
   @keyframes pulseCta{0%,100%{transform:scale(1);box-shadow:0 10px 26px rgba(176,144,79,.45)}50%{transform:scale(1.04);box-shadow:0 16px 38px rgba(176,144,79,.62)}}
   .pulse{animation:pulseCta 1.7s ease-in-out infinite}
+  @keyframes pulseGreen{0%,100%{transform:scale(1);box-shadow:0 12px 28px rgba(27,158,75,.4)}50%{transform:scale(1.035);box-shadow:0 18px 40px rgba(27,158,75,.6)}}
+  .pulse-green{animation:pulseGreen 1.7s ease-in-out infinite}
   .hero .sub{font-size:16.5px;color:var(--body);margin:0 auto 20px;max-width:400px}
   .media{border-radius:20px;overflow:hidden;box-shadow:var(--shadow);margin:0 auto 20px;max-width:300px;background:#000;aspect-ratio:9/16}
   .media video{display:block;width:100%;height:100%;object-fit:cover}
@@ -320,9 +322,8 @@
         <div class="small muted">pagamento único e 100% seguro</div>
         <div class="saveb">você economiza R$207 hoje</div>
       </div>
-      <button class="btn btn-green" onclick="checkout()">Finalizar minha homenagem</button>
+      <button class="btn btn-green pulse-green" onclick="checkout()">Finalizar minha homenagem</button>
       <p class="center small muted" style="margin:10px 0 0">Pague no Pix ou cartão — sem cadastro longo.</p>
-      <div class="secure">🛡️ Se não se emocionar, devolvemos 100%. Sem perguntas.</div>
       <div class="secure">🔒 Transação criptografada</div>
     </div>
 
@@ -562,30 +563,35 @@
   // beacon de carga da página /homenagem
   track('h_hero');
 
-  // carrossel de provas: deslize fluido + loop infinito (dedo no celular, clicar-e-arrastar no mouse)
+  // carrossel de provas: loop infinito suave (dedo no celular, clicar-e-arrastar no mouse)
+  // Anti-tremor: UM acumulador float (pos) manda no scrollLeft. SEM listener de 'scroll'
+  // chamando wrap (era isso que criava o feedback/tremedeira). O wrap só roda sobre `pos`.
   (function(){
     var el=document.querySelector('.provas'); if(!el||el.dataset.loop) return; el.dataset.loop='1';
     el.style.cursor='grab';
     Array.prototype.slice.call(el.children).forEach(function(n){ n.draggable=false; var c=n.cloneNode(true); c.setAttribute('aria-hidden','true'); el.appendChild(c); });
-    var half=0;
-    function measure(){
-      var w=el.scrollWidth, cur=Math.round(w/2);
-      // re-mede se ainda não definido OU se largura mudou bastante (imagens lazy carregando)
-      if(cur>40 && Math.abs(cur-half)>30){ half=cur; if(el.scrollLeft>=half) el.scrollLeft-=half; }
-    }
-    window.addEventListener('resize', function(){ half=0; });
-    function wrap(){ if(!half) return; if(el.scrollLeft>=half) el.scrollLeft-=half; else if(el.scrollLeft<=0) el.scrollLeft+=half; }
-    el.addEventListener('scroll', wrap, {passive:true});
-    // re-mede quando cada imagem termina de carregar (imagens lazy mudam o scrollWidth)
-    el.querySelectorAll('img').forEach(function(im){ im.addEventListener('load', function(){ half=0; }); });
-    var paused=false, dragging=false, sx=0, sl=0, moved=false, rt;
-    (function loop(){ measure(); if(!paused && !dragging && half){ el.scrollLeft+=0.45; wrap(); } requestAnimationFrame(loop); })();
-    el.addEventListener('pointerdown', function(e){ paused=true; clearTimeout(rt); if(e.pointerType!=='mouse') return; dragging=true; moved=false; sx=e.clientX; sl=el.scrollLeft; el.style.cursor='grabbing'; e.preventDefault(); });
-    el.addEventListener('pointermove', function(e){ if(!dragging) return; var dx=e.clientX-sx; if(Math.abs(dx)>3) moved=true; el.scrollLeft=sl-dx; wrap(); });
-    function endDrag(){ dragging=false; el.style.cursor='grab'; clearTimeout(rt); rt=setTimeout(function(){ paused=false; },1200); }
+    var half=0, pos=0, paused=false, dragging=false, sx=0, sl=0, moved=false, rt;
+    function measure(){ var w=el.scrollWidth; if(w>40) half=w/2; }
+    function norm(v){ return half ? ((v%half)+half)%half : v; }   // mantém pos dentro de [0,half)
+    measure();
+    window.addEventListener('resize', measure);
+    el.querySelectorAll('img').forEach(function(im){ if(!im.complete) im.addEventListener('load', measure); });
+    function resume(){ pos=norm(el.scrollLeft); paused=false; }    // sincroniza ANTES de voltar a animar (sem salto)
+    (function loop(){
+      if(!half) measure();   // o step 7 começa escondido (scrollWidth=0); mede quando aparece
+      if(!paused && !dragging && half){ pos=norm(pos+0.4); el.scrollLeft=pos; }
+      requestAnimationFrame(loop);
+    })();
+    // mouse: clicar e arrastar
+    el.addEventListener('pointerdown', function(e){ if(e.pointerType!=='mouse') return; paused=true; dragging=true; moved=false; sx=e.clientX; sl=el.scrollLeft; el.style.cursor='grabbing'; e.preventDefault(); });
+    el.addEventListener('pointermove', function(e){ if(!dragging) return; var dx=e.clientX-sx; if(Math.abs(dx)>3) moved=true; el.scrollLeft=sl-dx; });
+    function endDrag(){ if(!dragging) return; dragging=false; el.style.cursor='grab'; clearTimeout(rt); rt=setTimeout(resume,900); }
     ['pointerup','pointercancel','pointerleave'].forEach(function(ev){ el.addEventListener(ev, endDrag); });
     el.addEventListener('mouseenter', function(){ paused=true; });
-    el.addEventListener('mouseleave', function(){ if(!dragging) paused=false; });
+    el.addEventListener('mouseleave', function(){ if(!dragging){ clearTimeout(rt); rt=setTimeout(resume,300); } });
+    // toque (mobile): deixa o scroll nativo rolar; pausa enquanto toca e retoma depois
+    el.addEventListener('touchstart', function(){ paused=true; clearTimeout(rt); }, {passive:true});
+    el.addEventListener('touchend', function(){ clearTimeout(rt); rt=setTimeout(resume,1200); }, {passive:true});
     el.querySelectorAll('img').forEach(function(im){ im.addEventListener('click', function(e){ if(moved) e.preventDefault(); }); });
   })();
 
