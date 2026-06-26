@@ -31,6 +31,8 @@ TEXT — render the following Brazilian Portuguese text, correctly spelled, in e
 - a heartfelt memorial sentence in elegant dark serif: "{FRASE}"
 - at the very bottom, a small golden ribbon banner with a little white dove, reading: "Prévia da homenagem"
 
+SPELLING — CRITICAL: write the name and every word EXACTLY as given above, preserving the exact letters and accents — do NOT add, remove or alter any accent or letter (e.g., if the name is "Renan" write exactly "Renan", never "Renán").
+
 STYLE: sacred, warm, comforting, timeless and tasteful. Photorealistic face, painterly heavenly background, ornate and elegant. High quality.`).trim();
 
 function buildFrase(memoria) {
