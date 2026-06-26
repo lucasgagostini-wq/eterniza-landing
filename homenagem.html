@@ -65,12 +65,21 @@
   .drop{display:block;border:2px dashed #dcc99c;border-radius:18px;background:var(--card);padding:34px 20px;text-align:center;cursor:pointer;box-shadow:var(--shadow-s)}
   .drop .ic{font-size:42px}
   .tip{background:var(--bnr);border:1px solid var(--bnr-b);border-radius:13px;padding:13px 15px;font-size:13px;color:var(--gold-d);text-align:left;margin:15px 0}
-  /* loading (webm do Reviva) */
-  .load{padding:54px 0;text-align:center}
-  .load video{width:170px;height:170px;object-fit:contain;margin:0 auto 18px;display:block}
-  .loadmsg{color:var(--body);min-height:22px;font-size:15px}
-  .bar{height:7px;background:var(--line);border-radius:7px;max-width:300px;margin:20px auto 0;overflow:hidden}
-  .bar>i{display:block;height:100%;width:5%;background:linear-gradient(90deg,var(--gold-l),var(--gold-d));transition:width .4s}
+  /* loading (estilo RevivaPic: card + foto do lead + checklist) */
+  .loadcard{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:30px 24px 26px;box-shadow:var(--shadow);text-align:center;margin-top:22px}
+  .loadheart{font-size:30px;color:var(--gold);line-height:1}
+  .loadphoto{width:108px;height:108px;border-radius:50%;margin:14px auto 18px;padding:4px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));box-shadow:0 8px 22px rgba(176,144,79,.35)}
+  .loadphoto img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;background:#eee}
+  .bar{height:7px;background:var(--line);border-radius:7px;max-width:300px;margin:18px auto 0;overflow:hidden}
+  .bar>i{display:block;height:100%;width:4%;background:linear-gradient(90deg,var(--gold-l),var(--gold-d))}
+  .checks{list-style:none;margin:24px 0 0;padding:0;text-align:left}
+  .checks li{display:flex;align-items:center;gap:11px;padding:9px 2px;font-size:14.5px;color:var(--body);opacity:0;transform:translateY(6px);transition:opacity .45s ease,transform .45s ease}
+  .checks li.on{opacity:1;transform:none}
+  .checks li .ck{width:20px;height:20px;flex:0 0 auto;display:grid;place-items:center;color:var(--green);font-weight:800;font-size:15px}
+  .checks li.doing .ck{color:var(--gold-d);animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loadtrust{font-size:13px;color:var(--muted);margin-top:22px;border-top:1px solid var(--line);padding-top:18px}
+  .loadnote{background:var(--bnr);border:1px solid var(--bnr-b);border-radius:13px;padding:13px 15px;font-size:13px;color:var(--gold-d);margin-top:16px}
   /* reveal */
   .reveal-img{position:relative;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);max-width:300px;margin:0 auto;background:#eee}
   .reveal-img img{display:block;width:100%}
@@ -224,13 +233,16 @@
     <button class="btn btn-ghost" onclick="go(4)">← voltar</button>
   </section>
 
-  <!-- 6 · LOADING (webm do Reviva) -->
+  <!-- 6 · LOADING -->
   <section class="step" data-step="6">
-    <div class="load">
-      <video autoplay muted loop playsinline><source src="/loading.webm" type="video/webm"></video>
-      <h2 class="serif" style="font-size:21px" id="loadTitle">Criando a sua homenagem…</h2>
-      <div class="loadmsg" id="loadMsg">Recebendo a foto com muito carinho…</div>
+    <div class="loadcard">
+      <div class="loadheart">♥</div>
+      <div class="loadphoto"><img id="loadImg" alt="" /></div>
+      <h2 class="serif center" style="font-size:22px" id="loadTitle">Criando a sua homenagem…</h2>
       <div class="bar"><i id="loadBar"></i></div>
+      <ul class="checks" id="checks"></ul>
+      <div class="loadtrust">🛡️ 100% das homenagens entregues em até 24h</div>
+      <div class="loadnote">Por favor, não feche esta tela. Estamos preparando um momento muito especial para você.</div>
     </div>
   </section>
 
@@ -395,32 +407,50 @@
     rd.readAsDataURL(f);
   }
 
-  var MSGS=['Recebendo a foto com muito carinho…','Estamos preparando a homenagem…','Compondo a arte com Cristo…','Escrevendo o nome em ouro…','Quase pronto. Preparando a revelação…'];
+  // tela de loading: foto do lead na bolinha + barra fluida + checklist item a item, sincronizado
+  var CHECKS=['Recebendo sua fotografia com carinho…','Suavizando as marcas do tempo…','Iluminando o rosto e o sorriso…','Preparando o reencontro com Cristo…','Dando os primeiros traços da homenagem…'];
+  var loadTimers=[];
+  function clearLoad(){ loadTimers.forEach(clearTimeout); loadTimers=[]; }
+  function startLoad(){
+    var li=document.getElementById('loadImg'); if(li&&state.fotoB64) li.src=state.fotoB64;
+    document.getElementById('loadTitle').textContent = state.nome ? ('Criando a homenagem de '+state.nome+'…') : 'Criando a sua homenagem…';
+    var ul=document.getElementById('checks'); ul.innerHTML='';
+    CHECKS.forEach(function(txt){ var l=document.createElement('li'); l.innerHTML='<span class="ck">⟳</span> '+txt; ul.appendChild(l); });
+    var items=ul.querySelectorAll('li');
+    var bar=document.getElementById('loadBar');
+    bar.style.transition='none'; bar.style.width='4%'; void bar.offsetWidth;
+    bar.style.transition='width 7.8s cubic-bezier(.2,.65,.3,1)'; bar.style.width='93%';
+    var stepMs=1450;
+    items.forEach(function(l,idx){
+      loadTimers.push(setTimeout(function(){
+        if(idx>0){ var p=items[idx-1]; p.classList.remove('doing'); var c=p.querySelector('.ck'); if(c) c.textContent='✓'; }
+        l.classList.add('on','doing');
+      }, 350+idx*stepMs));
+    });
+  }
+  function finishLoad(cb){
+    clearLoad();
+    var bar=document.getElementById('loadBar'); bar.style.transition='width .5s ease'; bar.style.width='100%';
+    document.querySelectorAll('#checks li').forEach(function(l){ l.classList.add('on'); l.classList.remove('doing'); var c=l.querySelector('.ck'); if(c) c.textContent='✓'; });
+    setTimeout(cb, 650);
+  }
   function gerar(){
-    if(state.nome){ document.getElementById('loadTitle').textContent='Criando a homenagem de '+state.nome+'…'; }
-    go(6);
-    var i=0, pct=6;
-    var bar=document.getElementById('loadBar'), msg=document.getElementById('loadMsg');
-    bar.style.width=pct+'%';
-    var t=setInterval(function(){ i=(i+1)%MSGS.length; msg.textContent=MSGS[i]; pct=Math.min(92,pct+7); bar.style.width=pct+'%'; },2600);
+    go(6); startLoad();
     var rel = state.quem==='Outro familiar/amigo' ? '' : state.quem;
     fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fotoB64:state.fotoB64,nome:state.nome,quem:rel,frase:state.frase,memoria:state.memoria,nowm:true})})
     .then(function(r){return r.json();})
     .then(function(j){
-      clearInterval(t);
       if(!j||!j.previewUrl) throw new Error(j&&j.error||'sem_previa');
-      state.previewUrl=j.previewUrl; bar.style.width='100%';
-      armReveal();
+      state.previewUrl=j.previewUrl; armReveal();
       var img=document.getElementById('revImg');
-      img.onload=function(){ var w=document.querySelector('.reveal-img'); if(w) w.classList.add('loaded'); go(7); };
-      img.onerror=function(){ go(7); };
+      img.onload=function(){ var w=document.querySelector('.reveal-img'); if(w) w.classList.add('loaded'); finishLoad(function(){ go(7); }); };
+      img.onerror=function(){ finishLoad(function(){ go(7); }); };
       img.src=j.previewUrl;
-      setTimeout(function(){ if(document.querySelector('.step.active').dataset.step!=='7') go(7); },1400);
     })
     .catch(function(){
-      clearInterval(t);
+      clearLoad();
       document.getElementById('loadTitle').textContent='Ops, tivemos um probleminha';
-      document.getElementById('loadMsg').innerHTML='Não rolou gerar a prévia agora. <a href="javascript:gerar()" style="color:var(--gold-d)">tentar de novo</a>';
+      document.getElementById('checks').innerHTML='<li class="on" style="justify-content:center;color:var(--gold-d)"><a href="javascript:gerar()" style="color:var(--gold-d)">Não rolou gerar agora — tentar de novo</a></li>';
     });
   }
 
