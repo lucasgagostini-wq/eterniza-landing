@@ -334,6 +334,14 @@
   var state = { quem:'', ref:'', nome:'', memoria:'', frase:'', memoCustom:false, whatsapp:'', fotoB64:'', previewUrl:'' };
 
   function go(n){
+    if(n!==0){
+      try{
+        var sp=document.querySelector('vturb-smartplayer');
+        if(sp){ try{sp.paused=true;}catch(e){} try{sp.setVolume(0);}catch(e){} }
+        var heroVid=document.querySelector('vturb-smartplayer video');
+        if(heroVid){ heroVid.pause(); heroVid.muted=true; }
+      }catch(e){}
+    }
     document.querySelectorAll('.step').forEach(function(s){ s.classList.toggle('active', +s.dataset.step===n); });
     window.scrollTo({top:0,behavior:'smooth'});
   }
