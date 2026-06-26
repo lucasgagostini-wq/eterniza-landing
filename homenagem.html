@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Eterniza · Crie sua homenagem</title>
 <meta name="robots" content="noindex" />
+<meta name="description" content="Transforme a foto de quem deixou saudade em uma homenagem emocionante — em vídeo, com música. Veja sua prévia gratuita em instantes." />
+<meta name="theme-color" content="#fdfbf7" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E🕊️%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
@@ -30,7 +33,7 @@
   header{background:#fff;border-bottom:1px solid var(--line);text-align:center;padding:15px 0;position:sticky;top:0;z-index:9}
   .brand{font-family:"Playfair Display",serif;font-size:22px;font-weight:800;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
   .brand svg{display:block}
-  .btn{display:block;width:100%;border:0;border-radius:15px;padding:18px 20px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .12s,box-shadow .2s;text-decoration:none;text-align:center}
+  .btn{display:block;width:100%;border:0;border-radius:15px;padding:18px 20px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform .12s,box-shadow .2s,filter .2s;text-decoration:none;text-align:center}
   .btn-gold{background:linear-gradient(180deg,var(--gold-l),var(--gold-d));color:#fff;box-shadow:0 10px 26px rgba(176,144,79,.45);text-transform:uppercase;letter-spacing:.4px}
   .btn-gold:active{transform:translateY(1px)}
   .btn-green{background:linear-gradient(180deg,#26b35e,var(--green));color:#fff;box-shadow:0 12px 28px rgba(27,158,75,.4);text-transform:uppercase;letter-spacing:.3px}
@@ -95,13 +98,36 @@
   .provas img{height:300px;border-radius:14px;box-shadow:var(--shadow-s);scroll-snap-align:center;flex:0 0 auto}
   .gbox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow-s);text-align:center;margin-top:22px}
   .gbox .gb{display:inline-block;background:#eef9f0;color:var(--green);border:1px solid #cdeed6;border-radius:30px;padding:7px 16px;font-size:13px;font-weight:700;margin-top:8px}
-  .faq{border-top:1px solid var(--line);padding:15px 2px;cursor:pointer}
-  .faq b{font-size:15px;color:var(--ink)} .faq p{margin:.5em 0 0;font-size:14px;color:var(--muted);display:none}
-  .faq.open p{display:block}
+  .faq{border-top:1px solid var(--line)}
+  .faq summary{list-style:none;cursor:pointer;padding:15px 28px 15px 2px;font-size:15px;font-weight:600;color:var(--ink);position:relative}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:'+';position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--gold-d);font-size:20px;font-weight:700;line-height:1}
+  .faq[open] summary::after{content:'–'}
+  .faq p{margin:-2px 2px 16px;font-size:14px;color:var(--muted)}
   .sect{text-align:center;margin:32px 0 16px}
   .kick{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gold-d);font-weight:700}
   .foot{text-align:center;color:#b7ad9d;font-size:12px;padding:26px 0 40px}
   .hidden{display:none!important}
+  /* ——— polish: estados, micro-tipografia, movimento, a11y ——— */
+  html{scroll-behavior:smooth}
+  body{-webkit-tap-highlight-color:transparent}
+  h1,h2,h3,.brand{letter-spacing:-.012em}
+  h1{text-wrap:balance} p{text-wrap:pretty}
+  .price .now,.sv,.stktotal{font-variant-numeric:tabular-nums}
+  .btn-gold:hover{filter:brightness(1.04);transform:translateY(-1px);box-shadow:0 14px 30px rgba(176,144,79,.5)}
+  .btn-green:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 16px 32px rgba(27,158,75,.45)}
+  .btn-green:active{transform:translateY(1px)}
+  .btn-ghost:hover{color:var(--ink)}
+  .opt:hover{border-color:var(--gold);background:#fffdf8;transform:translateY(-1px);box-shadow:0 10px 22px rgba(80,60,25,.1)}
+  .drop:hover{border-color:var(--gold);background:#fffdf8}
+  .faq summary:hover{color:var(--gold-d)}
+  .provas img{transition:transform .2s ease}.provas img:active{transform:scale(.98)}
+  .btn:focus-visible,.opt:focus-visible,.drop:focus-visible,.faq summary:focus-visible{outline:3px solid rgba(197,160,89,.55);outline-offset:2px;border-radius:14px}
+  input:focus-visible,textarea:focus-visible{outline:3px solid rgba(197,160,89,.4);outline-offset:1px}
+  .opt{animation:optin .45s ease backwards}
+  .opt:nth-child(1){animation-delay:.04s}.opt:nth-child(2){animation-delay:.09s}.opt:nth-child(3){animation-delay:.14s}.opt:nth-child(4){animation-delay:.19s}.opt:nth-child(5){animation-delay:.24s}.opt:nth-child(6){animation-delay:.29s}
+  @keyframes optin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -244,11 +270,11 @@
     </div>
 
     <div class="sect"><div class="kick">Tirando dúvidas</div><h3 class="serif" style="font-size:20px;margin-top:6px">Dúvidas frequentes</h3></div>
-    <div class="faq" onclick="this.classList.toggle('open')"><b>Quem cuida da minha homenagem?</b><p>Uma equipe de artistas humanos edita cada homenagem com calma e carinho, tratando o seu vídeo como uma obra única. Toda a comunicação acontece direto no WhatsApp.</p></div>
-    <div class="faq" onclick="this.classList.toggle('open')"><b>Como vou receber o meu vídeo?</b><p>Toda a comunicação acontece pelo WhatsApp. Assim que o pagamento for confirmado, nossa equipe entra em contato pra confirmar os detalhes, e o vídeo final é enviado por lá em até 24 horas.</p></div>
-    <div class="faq" onclick="this.classList.toggle('open')"><b>É seguro pagar pelo celular?</b><p>Sim, 100% seguro. Você pode pagar no Pix ou no cartão. Toda transação é criptografada e processada por gateway certificado — não temos acesso aos seus dados bancários.</p></div>
-    <div class="faq" onclick="this.classList.toggle('open')"><b>E se a minha foto for muito antiga ou estiver danificada?</b><p>Nossa equipe é especialista nisso. Antes de criar a homenagem, nossos artistas limpam as imperfeições, restauram as cores naturalmente e trazem nitidez ao rosto.</p></div>
-    <div class="faq" onclick="this.classList.toggle('open')"><b>Como funciona a garantia?</b><p>Se você receber o seu vídeo e não se emocionar, basta uma mensagem no nosso WhatsApp e devolvemos 100% do seu dinheiro no mesmo dia. Sem perguntas, sem burocracia.</p></div>
+    <details class="faq"><summary>Quem cuida da minha homenagem?</summary><p>Uma equipe de artistas humanos edita cada homenagem com calma e carinho, tratando o seu vídeo como uma obra única. Toda a comunicação acontece direto no WhatsApp.</p></details>
+    <details class="faq"><summary>Como vou receber o meu vídeo?</summary><p>Toda a comunicação acontece pelo WhatsApp. Assim que o pagamento for confirmado, nossa equipe entra em contato pra confirmar os detalhes, e o vídeo final é enviado por lá em até 24 horas.</p></details>
+    <details class="faq"><summary>É seguro pagar pelo celular?</summary><p>Sim, 100% seguro. Você pode pagar no Pix ou no cartão. Toda transação é criptografada e processada por gateway certificado — não temos acesso aos seus dados bancários.</p></details>
+    <details class="faq"><summary>E se a minha foto for muito antiga ou estiver danificada?</summary><p>Nossa equipe é especialista nisso. Antes de criar a homenagem, nossos artistas limpam as imperfeições, restauram as cores naturalmente e trazem nitidez ao rosto.</p></details>
+    <details class="faq"><summary>Como funciona a garantia?</summary><p>Se você receber o seu vídeo e não se emocionar, basta uma mensagem no nosso WhatsApp e devolvemos 100% do seu dinheiro no mesmo dia. Sem perguntas, sem burocracia.</p></details>
 
     <h3 class="serif center" style="margin-top:30px;font-size:22px">Pronto para emocionar<br>toda a sua família?</h3>
     <button class="btn btn-green" style="margin-top:14px" onclick="checkout()">Finalizar minha homenagem</button>
