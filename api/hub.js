@@ -65,7 +65,15 @@ module.exports = async (req, res) => {
 
   try {
     if (action === 'list') {
-      const rows = await sbSelect(`orders?select=${COLS}&order=created_at.desc&limit=500`);
+      let rows;
+      try {
+        rows = await sbSelect(`orders?select=${COLS}&order=created_at.desc&limit=500`);
+      } catch (e) {
+        if (String(e.message || e).includes('attendant')) {
+          const COLS_LEGACY = COLS.replace(',attendant,attendant_at', '');
+          rows = await sbSelect(`orders?select=${COLS_LEGACY}&order=created_at.desc&limit=500`);
+        } else { throw e; }
+      }
       return res.status(200).json({ orders: Array.isArray(rows) ? rows : [] });
     }
     // análise do funil: junta funnel_events (landing+bot, sessões DISTINTAS) com orders (oferta->pago)
