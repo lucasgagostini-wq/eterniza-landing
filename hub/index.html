@@ -686,7 +686,7 @@
             <button class="btn danger sm" data-del="${o.id}">🗑 Excluir</button>
           </div>
         </div>
-        <div class="pills" style="margin-bottom:4px;margin-top:2px">${[['','○ Livre'],['folha','🌿 Folha'],['davi','🔥 Davi']].map(([k,l])=>`<span class="p ${(o.attendant||'')===k?'on':''}" data-att="${o.id}|${k}">${l}</span>`).join('')}${!o.attendant?`<button class="btn sm primary" data-grab="${o.id}" style="margin-left:6px">✋ Pegar pra mim</button>`:''}</div>`;
+        <div class="pills" style="margin-bottom:4px;margin-top:2px">${[['','○ Livre'],['folha','🌿 Folha'],['davi','🔥 Davi']].map(([k,l])=>`<span class="p ${(o.attendant||'')===k?'on':''}" data-att="${o.id}|${k}">${l}</span>`).join('')}</div>`;
 
       if(editing){ html+=editForm(o); inner.innerHTML=html; return; }
 
