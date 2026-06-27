@@ -445,6 +445,7 @@
     const ATT = { folha:['🌿 Folha','#22c55e','rgba(34,197,94,.14)'], davi:['🔥 Davi','#f87171','rgba(248,113,113,.14)'] };
     function attTag(o){ const t=ATT[o&&o.attendant]; return t?`<span class="chip" style="color:${t[1]};background:${t[2]};border:1px solid ${t[1]}33">${t[0]}</span>`:`<span class="chip" style="color:#9ca3af;background:rgba(255,255,255,.05);border:1px solid #ffffff14">○ Livre</span>`; }
     function sourceTag(o){ const s=(o.typebot_payload||{}).source; if(s==='homenagem') return '<span class="chip" style="color:#c084fc;background:rgba(192,132,252,.12);border:1px solid #c084fc33">✨ Prévia</span>'; if(o.typebot_payload) return '<span class="chip" style="color:#67e8f9;background:rgba(103,232,249,.1);border:1px solid #67e8f933">🤖 Bot</span>'; return ''; }
+    const confirmTag=o=>(['pago','fila_edicao'].includes(o&&o.status))?'<span class="chip" style="background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.35)">⚡ confirmar</span>':'';
     const ALL_STATUS = ['briefing_recebido','checkout_iniciado','recuperacao_pix','pago','fila_edicao','produzindo','pronta','entregue','erro'];
     const FILTERS = [
       {key:'recuperar',label:'Recuperar',test:o=>RECUPERAR.includes(o.status)},
@@ -513,6 +514,11 @@
     }
 
     // ----- mensagens (template — IA depois; usam os dados reais do form) -----
+    function confirmMsg(o){
+      const ola=firstName(o.customer_name)?`Olá, ${firstName(o.customer_name)}!`:'Olá!';
+      const hom=o.recipient_name?` de *${o.recipient_name}*`:'';
+      return `${ola} 🕊️\n\nRecebi o pedido da homenagem${hom} com muito carinho. ❤️\n\nSeu pagamento foi confirmado e já estamos trabalhando com toda atenção. Em até 24h você recebe o vídeo, a música e a arte aqui no seu WhatsApp.\n\nQualquer dúvida, é só me chamar! 🙏\n— Equipe Eterniza`;
+    }
     function deliverMsg(o){
       const ola=firstName(o.customer_name)?`Olá ${firstName(o.customer_name)}!`:'Olá!';
       return `${ola} 🕊️ A homenagem em vídeo ${destPhrase(o)} ficou pronta, feita com muito carinho.\n\nAqui está:\n${o.video_url||'[link do vídeo]'}`;
@@ -631,7 +637,7 @@
         : `${o.relationship?esc(o.relationship)+' · ':''}<span style="color:#e7a17a">comprador no pagamento</span>`;
       return `<div class="fc-top"><span class="nm">${titulo}</span><span class="dt mono">${esc(fmt(o.created_at))}</span></div>
           <span class="for">${sub}</span>
-          <div class="tags">${chip(o.status)}${recoTag(o)}${attTag(o)}${sourceTag(o)}</div>`;
+          <div class="tags">${chip(o.status)}${confirmTag(o)}${recoTag(o)}${attTag(o)}${sourceTag(o)}</div>`;
     }
     const cardSig=o=>JSON.stringify([o.customer_name,o.recipient_name,o.relationship,o.status,o.created_at,o.recovery_contact_status,o.attendant]);
     // RECONCILE: cria/atualiza/move só o que mudou. Cards iguais ficam intactos
@@ -683,6 +689,9 @@
         <div class="pills" style="margin-bottom:4px;margin-top:2px">${[['','○ Livre'],['folha','🌿 Folha'],['davi','🔥 Davi']].map(([k,l])=>`<span class="p ${(o.attendant||'')===k?'on':''}" data-att="${o.id}|${k}">${l}</span>`).join('')}${!o.attendant?`<button class="btn sm primary" data-grab="${o.id}" style="margin-left:6px">✋ Pegar pra mim</button>`:''}</div>`;
 
       if(editing){ html+=editForm(o); inner.innerHTML=html; return; }
+
+      if(['pago','fila_edicao'].includes(o.status)&&phone) html+=`<div style="background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:13px 15px;margin:10px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:13px;font-weight:700;color:#fcd34d">⚡ Cliente aguardando confirmação</div><div style="font-size:12px;color:#a3a3a3;margin-top:2px">Envie agora para evitar pedido de reembolso</div></div><a class="wpp" href="${waLink(phone,confirmMsg(o))}" target="_blank" rel="noopener" style="flex-shrink:0">📤 Confirmar pedido</a></div>`;
+      if(o.status==='pronta'&&phone&&o.video_url) html+=`<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.28);border-radius:12px;padding:13px 15px;margin:10px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:13px;font-weight:700;color:#86efac">🎬 Homenagem pronta — entregar agora</div><div style="font-size:12px;color:#a3a3a3;margin-top:2px">O vídeo está pronto e aguardando entrega</div></div><a class="wpp" href="${waLink(phone,deliverMsg(o))}" target="_blank" rel="noopener" style="flex-shrink:0">🎬 Entregar agora</a></div>`;
 
       // dados da homenagem (comum aos dois formatos) — todos os campos coletados no fluxo
       const obj=o.objetivo||(o.typebot_payload&&o.typebot_payload.objetivo);
