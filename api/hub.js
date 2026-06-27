@@ -346,8 +346,13 @@ module.exports = async (req, res) => {
     if (action === 'assign') {
       const a = (req.query.attendant || '').toString();
       if (!id || !['', 'folha', 'davi'].includes(a)) return res.status(400).json({ error: 'bad_params' });
-      await sbUpdate('orders', `id=eq.${encodeURIComponent(id)}`,
-        { attendant: a || null, attendant_at: a ? new Date().toISOString() : null });
+      try {
+        await sbUpdate('orders', `id=eq.${encodeURIComponent(id)}`,
+          { attendant: a || null, attendant_at: a ? new Date().toISOString() : null });
+      } catch (e) {
+        if (String(e.message || e).includes('attendant')) return res.status(503).json({ error: 'migration_pendente', detail: 'Rode a migration no Supabase antes de usar atribuição.' });
+        throw e;
+      }
       return res.status(200).json({ ok: true });
     }
     if (action === 'delete') {
