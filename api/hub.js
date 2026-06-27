@@ -3,7 +3,7 @@ const { sbSelect, sbUpdate, sbInsert, sbDelete, normalizePhone, getByPath, pick,
 
 const STATUSES = ['briefing_recebido', 'checkout_iniciado', 'recuperacao_pix', 'pago', 'fila_edicao', 'produzindo', 'pronta', 'entregue', 'erro'];
 const RECOVERY = ['nao_contatado', 'contatado', 'sem_resposta', 'convertido', 'descartado'];
-const COLS = 'id,created_at,updated_at,customer_name,customer_email,customer_phone,phone_normalized,recipient_name,relationship,memory,photo_url,photos,video_url,delivery_message,delivered_at,valor,payment_status,status,pix_generated_at,recovery_ready,recovery_contact_status,recovery_notes,typebot_payload';
+const COLS = 'id,created_at,updated_at,customer_name,customer_email,customer_phone,phone_normalized,recipient_name,relationship,memory,photo_url,photos,video_url,delivery_message,delivered_at,valor,payment_status,status,pix_generated_at,recovery_ready,recovery_contact_status,recovery_notes,typebot_payload,attendant,attendant_at';
 
 // Anti-bruteforce: 3 senhas erradas por IP -> trava 30s. In-memory (por instância serverless);
 // só conta tentativa ERRADA — login certo e o auto-refresh (token válido) nunca disparam o bloqueio.
@@ -333,6 +333,13 @@ module.exports = async (req, res) => {
       const rc = (req.query.recovery_contact_status || '').toString();
       if (!id || !RECOVERY.includes(rc)) return res.status(400).json({ error: 'bad_params' });
       await sbUpdate('orders', `id=eq.${encodeURIComponent(id)}`, { recovery_contact_status: rc });
+      return res.status(200).json({ ok: true });
+    }
+    if (action === 'assign') {
+      const a = (req.query.attendant || '').toString();
+      if (!id || !['', 'folha', 'davi'].includes(a)) return res.status(400).json({ error: 'bad_params' });
+      await sbUpdate('orders', `id=eq.${encodeURIComponent(id)}`,
+        { attendant: a || null, attendant_at: a ? new Date().toISOString() : null });
       return res.status(200).json({ ok: true });
     }
     if (action === 'delete') {

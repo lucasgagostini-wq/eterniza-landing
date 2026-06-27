@@ -101,6 +101,8 @@
 
     .feed-card{margin:7px 12px;padding:12px 13px;border-radius:13px;cursor:pointer;background:#121212;border:1px solid #222;border-left:1px solid #222;animation:feedin .3s ease both}
     .feed-card:hover{background:#161616}
+    .feed-card.att-folha{ border-left:3px solid #22c55e }
+    .feed-card.att-davi { border-left:3px solid #f87171 }
     .feed-card.sel{background:#161616;border-color:var(--accent-border);border-left:3px solid var(--accent)}
     .feed-card .fc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
     .feed-card .nm{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -349,6 +351,11 @@
       </div>
       <div class="right">
         <span class="who" id="who"></span>
+        <div id="meToggle" style="display:flex;align-items:center;gap:4px;font-size:11px;color:#666;flex-shrink:0">
+          <span style="white-space:nowrap">Eu sou:</span>
+          <span id="meF" data-wme="folha" style="font-size:10.5px;padding:2px 7px;border-radius:7px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#8f8f8f;user-select:none;transition:color .15s,border-color .15s,background .15s">🌿 Folha</span>
+          <span id="meD" data-wme="davi" style="font-size:10.5px;padding:2px 7px;border-radius:7px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#8f8f8f;user-select:none;transition:color .15s,border-color .15s,background .15s">🔥 Davi</span>
+        </div>
         <button class="btn ghost sm" id="btnInstall" style="display:none">⬇ Instalar app</button>
         <button class="btn ghost sm" id="btnAnalytics">📊 Análise</button>
         <button class="btn ghost sm" id="btnLogout">Sair</button>
@@ -361,6 +368,7 @@
           <input id="feedSearch" type="search" placeholder="🔍 Buscar lead por número ou nome…" autocomplete="off" spellcheck="false" inputmode="search">
           <button id="feedSearchClear" type="button" title="Limpar busca" aria-label="Limpar busca">✕</button>
         </div>
+        <div class="feed-dates" id="attFilters"></div>
         <div class="feed-dates" id="feedDates">
           <span class="p on" data-fpreset="tudo">Tudo</span>
           <span class="p" data-fpreset="hoje">Hoje</span>
@@ -434,6 +442,8 @@
     // tag de recuperação visível no card (nao_contatado / sem_resposta => sem tag)
     const RECO_TAG = { contatado:['Contatado','#7cc0ff','rgba(96,165,250,.13)'], convertido:['Convertido ✓','#86efac','rgba(34,197,94,.15)'], descartado:['Descartado','#fca5a5','rgba(248,113,113,.13)'] };
     function recoTag(o){ const t=RECO_TAG[o&&o.recovery_contact_status]; return t?`<span class="chip" style="color:${t[1]};background:${t[2]};border:1px solid ${t[1]}33">${esc(t[0])}</span>`:''; }
+    const ATT = { folha:['🌿 Folha','#22c55e','rgba(34,197,94,.14)'], davi:['🔥 Davi','#f87171','rgba(248,113,113,.14)'] };
+    function attTag(o){ const t=ATT[o&&o.attendant]; return t?`<span class="chip" style="color:${t[1]};background:${t[2]};border:1px solid ${t[1]}33">${t[0]}</span>`:`<span class="chip" style="color:#9ca3af;background:rgba(255,255,255,.05);border:1px solid #ffffff14">○ Livre</span>`; }
     function sourceTag(o){ const s=(o.typebot_payload||{}).source; if(s==='homenagem') return '<span class="chip" style="color:#c084fc;background:rgba(192,132,252,.12);border:1px solid #c084fc33">✨ Prévia</span>'; if(o.typebot_payload) return '<span class="chip" style="color:#67e8f9;background:rgba(103,232,249,.1);border:1px solid #67e8f933">🤖 Bot</span>'; return ''; }
     const ALL_STATUS = ['briefing_recebido','checkout_iniciado','recuperacao_pix','pago','fila_edicao','produzindo','pronta','entregue','erro'];
     const FILTERS = [
@@ -575,8 +585,21 @@
       $('filters').innerHTML=FILTERS.map(f=>
         `<div class="f ${f.key} ${f.key===FILTER?'on':''}" data-f="${f.key}"><span class="lbl">${f.label}</span><span class="c">${c[f.key]}</span></div>`
       ).join('');
+      renderAttFilter();
     }
-    let SEARCH='';
+    function renderAttFilter(){
+      const box=$('attFilters'); if(!box) return;
+      const cnts={todos:ORDERS.length,folha:ORDERS.filter(o=>o.attendant==='folha').length,davi:ORDERS.filter(o=>o.attendant==='davi').length,none:ORDERS.filter(o=>!o.attendant).length};
+      const items=[['todos','Todos'],['folha','🌿 Folha'],['davi','🔥 Davi'],['none','○ Livre']];
+      box.innerHTML=items.map(([k,l])=>`<span class="p ${ATT_FILTER===k?'on':''}" data-fatt="${k}">${l} <span style="font-size:10px;opacity:.65">${cnts[k]}</span></span>`).join('');
+    }
+    function applyMe(){
+      const me=localStorage.getItem('etz_hub_me')||'';
+      const mf=$('meF'),md=$('meD');
+      if(mf){if(me==='folha'){mf.style.color='#22c55e';mf.style.background='rgba(34,197,94,.14)';mf.style.borderColor='rgba(34,197,94,.4)'}else{mf.style.color='#8f8f8f';mf.style.background='#161616';mf.style.borderColor='var(--line-hard)'}}
+      if(md){if(me==='davi'){md.style.color='#f87171';md.style.background='rgba(248,113,113,.14)';md.style.borderColor='rgba(248,113,113,.4)'}else{md.style.color='#8f8f8f';md.style.background='#161616';md.style.borderColor='var(--line-hard)'}}
+    }
+    let SEARCH='', ATT_FILTER='todos';
     // casa por NÚMERO (dígitos, em phone_normalized/customer_phone) OU por NOME (comprador/homenageado)
     function matchesSearch(o,q){
       q=(q||'').trim(); if(!q) return true;
@@ -593,6 +616,8 @@
       let list=ORDERS.filter(f.test);
       const {fromTs,toTs}=dateBounds(FEED_FROM,FEED_TO); // filtro por data (opcional)
       if(fromTs!=null||toTs!=null) list=list.filter(o=>{const t=new Date(o.created_at||0).getTime();return (fromTs==null||t>=fromTs)&&(toTs==null||t<toTs);});
+      if(ATT_FILTER==='none') list=list.filter(o=>!o.attendant);
+      else if(ATT_FILTER!=='todos') list=list.filter(o=>o.attendant===ATT_FILTER);
       return list;
     }
     // conteúdo INTERNO do card (sem o wrapper) — usado no reconcile
@@ -606,9 +631,9 @@
         : `${o.relationship?esc(o.relationship)+' · ':''}<span style="color:#e7a17a">comprador no pagamento</span>`;
       return `<div class="fc-top"><span class="nm">${titulo}</span><span class="dt mono">${esc(fmt(o.created_at))}</span></div>
           <span class="for">${sub}</span>
-          <div class="tags">${chip(o.status)}${recoTag(o)}${sourceTag(o)}</div>`;
+          <div class="tags">${chip(o.status)}${recoTag(o)}${attTag(o)}${sourceTag(o)}</div>`;
     }
-    const cardSig=o=>JSON.stringify([o.customer_name,o.recipient_name,o.relationship,o.status,o.created_at,o.recovery_contact_status]);
+    const cardSig=o=>JSON.stringify([o.customer_name,o.recipient_name,o.relationship,o.status,o.created_at,o.recovery_contact_status,o.attendant]);
     // RECONCILE: cria/atualiza/move só o que mudou. Cards iguais ficam intactos
     // => não re-anima (acaba a "piscada") e não joga o scroll pro topo.
     function renderFeed(){
@@ -620,12 +645,13 @@
       const seen=new Set(); let prev=null;
       for(const o of list){
         const id=String(o.id); seen.add(id); const sig=cardSig(o); let el=have[id];
+        const attCls=o.attendant?'att-'+o.attendant:'att-none';
         if(!el){
           el=document.createElement('div'); el.dataset.sel=id; el.dataset.sig=sig;
-          el.className='feed-card'+(o.id===selId?' sel':''); el.innerHTML=cardInner(o);
+          el.className='feed-card '+attCls+(o.id===selId?' sel':''); el.innerHTML=cardInner(o);
         } else {
           if(el.dataset.sig!==sig){ el.innerHTML=cardInner(o); el.dataset.sig=sig; }
-          const cls='feed-card'+(o.id===selId?' sel':''); if(el.className!==cls) el.className=cls;
+          const cls='feed-card '+attCls+(o.id===selId?' sel':''); if(el.className!==cls) el.className=cls;
         }
         const ref=prev?prev.nextSibling:host.firstChild;
         if(el!==ref) host.insertBefore(el,ref);
@@ -653,7 +679,8 @@
             <button class="btn ghost sm" data-edit="${o.id}">✎ Editar</button>
             <button class="btn danger sm" data-del="${o.id}">🗑 Excluir</button>
           </div>
-        </div>`;
+        </div>
+        <div class="pills" style="margin-bottom:4px;margin-top:2px">${[['','○ Livre'],['folha','🌿 Folha'],['davi','🔥 Davi']].map(([k,l])=>`<span class="p ${(o.attendant||'')===k?'on':''}" data-att="${o.id}|${k}">${l}</span>`).join('')}${!o.attendant?`<button class="btn sm primary" data-grab="${o.id}" style="margin-left:6px">✋ Pegar pra mim</button>`:''}</div>`;
 
       if(editing){ html+=editForm(o); inner.innerHTML=html; return; }
 
@@ -857,6 +884,10 @@
 
       const stt=t.closest('[data-status]'); if(stt){const[id,s]=stt.dataset.status.split('|');try{await api('update',{id,status:s});toast('Status: '+(FLOW_LBL[s]||s),'ok');await load()}catch(e){handleErr(e,'Falha')}return}
       const rc=t.closest('[data-rc]'); if(rc){const[id,k]=rc.dataset.rc.split('|');try{await api('recovery',{id,recovery_contact_status:k});if(k==='convertido')await api('update',{id,status:'fila_edicao'});toast(k==='convertido'?'Convertido → movido pra Produzir ✓':'Atualizado','ok');await load()}catch(e){handleErr(e,'Falha')}return}
+      const at=t.closest('[data-att]'); if(at){const[id,k]=at.dataset.att.split('|');try{await api('assign',{id,attendant:k});const o=ORDERS.find(x=>x.id===id);if(o)o.attendant=k||null;toast(k?('Atribuído a '+(k==='folha'?'🌿 Folha':'🔥 Davi')):'Liberado ○','ok');await load()}catch(e){handleErr(e,'Falha')}return}
+      const fatt=t.closest('[data-fatt]'); if(fatt){ATT_FILTER=fatt.dataset.fatt;renderFeed();renderAttFilter();return}
+      const wme=t.closest('[data-wme]'); if(wme){const v=wme.dataset.wme;const cur=localStorage.getItem('etz_hub_me')||'';localStorage.setItem('etz_hub_me',cur===v?'':v);applyMe();return}
+      const grab=t.closest('[data-grab]'); if(grab){const me=localStorage.getItem('etz_hub_me')||'';if(!me){toast('Primeiro defina quem você é (toggle no topo)','err');return}const id=grab.dataset.grab;try{await api('assign',{id,attendant:me});const o=ORDERS.find(x=>x.id===id);if(o)o.attendant=me;toast('Pego para '+(me==='folha'?'🌿 Folha':'🔥 Davi'),'ok');await load()}catch(e){handleErr(e,'Falha')}return}
       const sv=t.closest('[data-savevid]'); if(sv){const id=sv.dataset.savevid;const inp=document.querySelector(`input[data-vid="${id}"]`);try{await api('set_video',{id,video_url:inp?inp.value.trim():''});toast('Vídeo salvo ✓','ok');const o=ORDERS.find(x=>x.id===id);if(o)o.video_url=inp.value.trim();selSig='';renderDetail()}catch(e){handleErr(e,'Falha')}return}
       const cm=t.closest('[data-copymsg]'); if(cm){const ta=document.querySelector(`textarea[data-msg="${cm.dataset.copymsg}"]`);if(ta){navigator.clipboard?.writeText(ta.value);toast('Mensagem copiada','ok')}return}
       const ct=t.closest('[data-copytext]'); if(ct){navigator.clipboard?.writeText(ct.dataset.copytext);toast('Copiado ✓','ok');return}
@@ -1185,7 +1216,7 @@
       e.preventDefault();$('loginErro').textContent='';
       const v=$('senha').value.trim();if(!v){$('loginErro').textContent='Digite a senha.';return}
       token=v;
-      try{await api('list');sessionStorage.setItem(TKEY,token);$('senha').value='';showApp();await load();startAuto()}
+      try{await api('list');sessionStorage.setItem(TKEY,token);$('senha').value='';showApp();applyMe();const _me=localStorage.getItem('etz_hub_me')||'';if(_me&&ATT_FILTER==='todos')ATT_FILTER=_me;await load();startAuto()}
       catch(e){
         token='';
         if(e&&e.code===429){lockLogin(e.retryAfter)}
@@ -1200,7 +1231,7 @@
     window.addEventListener('appinstalled',()=>{$('btnInstall').style.display='none';toast('App instalado ✓','ok')});
     if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/hub/sw.js',{scope:'/hub/'}).catch(()=>{}))}
 
-    if(token){showApp();load();startAuto()}else{showLogin()}
+    if(token){showApp();applyMe();const _me0=localStorage.getItem('etz_hub_me')||'';if(_me0&&ATT_FILTER==='todos')ATT_FILTER=_me0;load();startAuto()}else{showLogin()}
   </script>
 </body>
 </html>
