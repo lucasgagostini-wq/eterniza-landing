@@ -550,7 +550,7 @@
       return L.join('\n');
     }
     function buyerText(o){
-      const tel=(o.phone_normalized||o.customer_phone||'').replace(/\D/g,'');
+      const tel=(o.phone_normalized||o.customer_phone||'').replace(/\D/g,'').replace(/^55(\d{10,11})$/,'$1');
       return `Nome\n${o.customer_name||'—'}\n\nE-mail\n${o.customer_email||'—'}\n\nCelular\n${tel||'—'}`;
     }
 
