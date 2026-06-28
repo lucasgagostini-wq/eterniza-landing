@@ -1,9 +1,12 @@
 // Backend do Delivery Hub — Eterniza. Protegido por token (ADMIN_TOKEN ou CAKTO_SECRET).
 const { sbSelect, sbUpdate, sbInsert, sbDelete, normalizePhone, getByPath, pick, SB, KEY } = require('./_lib');
+const wa = require('./_whatsapp');
 
 const STATUSES = ['briefing_recebido', 'checkout_iniciado', 'recuperacao_pix', 'pago', 'fila_edicao', 'produzindo', 'pronta', 'entregue', 'erro'];
 const RECOVERY = ['nao_contatado', 'contatado', 'sem_resposta', 'convertido', 'descartado'];
-const COLS = 'id,created_at,updated_at,customer_name,customer_email,customer_phone,phone_normalized,recipient_name,relationship,memory,photo_url,photos,video_url,delivery_message,delivered_at,valor,payment_status,status,pix_generated_at,recovery_ready,recovery_contact_status,recovery_notes,typebot_payload,attendant,attendant_at';
+const COLS = 'id,created_at,updated_at,customer_name,customer_email,customer_phone,phone_normalized,recipient_name,relationship,memory,photo_url,photos,video_url,delivery_message,delivered_at,valor,payment_status,status,pix_generated_at,recovery_ready,recovery_contact_status,recovery_notes,typebot_payload,attendant,attendant_at,wa_confirm_sent_at';
+// colunas adicionadas por migration — se ainda não existirem no banco, o list cai num retry sem elas
+const OPTIONAL_COLS = ['attendant', 'attendant_at', 'wa_confirm_sent_at'];
 
 // Anti-bruteforce: 3 senhas erradas por IP -> trava 30s. In-memory (por instância serverless);
 // só conta tentativa ERRADA — login certo e o auto-refresh (token válido) nunca disparam o bloqueio.
@@ -65,16 +68,29 @@ module.exports = async (req, res) => {
 
   try {
     if (action === 'list') {
-      let rows;
-      try {
-        rows = await sbSelect(`orders?select=${COLS}&order=created_at.desc&limit=500`);
-      } catch (e) {
-        if (String(e.message || e).includes('attendant')) {
-          const COLS_LEGACY = COLS.replace(',attendant,attendant_at', '');
-          rows = await sbSelect(`orders?select=${COLS_LEGACY}&order=created_at.desc&limit=500`);
-        } else { throw e; }
+      // tenta com COLS completo; se uma coluna opcional ainda não existe (migration pendente),
+      // retira ela e tenta de novo. Robusto a qualquer combinação de migrations pendentes.
+      let cols = COLS, rows;
+      for (let attempt = 0; attempt < OPTIONAL_COLS.length + 1; attempt++) {
+        try { rows = await sbSelect(`orders?select=${cols}&order=created_at.desc&limit=500`); break; }
+        catch (e) {
+          const msg = String(e.message || e);
+          const miss = OPTIONAL_COLS.find(c => msg.includes(c) && cols.split(',').includes(c));
+          if (miss) { cols = cols.split(',').filter(c => c !== miss).join(','); continue; }
+          throw e;
+        }
       }
       return res.status(200).json({ orders: Array.isArray(rows) ? rows : [] });
+    }
+    // teste do disparo automático de WhatsApp — manda a confirmação pro número informado.
+    // protegido pelo token do hub. Ex.: ?action=watest&to=5511999999999&nome=Lucas
+    if (action === 'watest') {
+      const to = (req.query.to || '').toString().trim();
+      if (!to) return res.status(400).json({ error: 'bad_params', hint: 'use ?to=5511999999999' });
+      const nome = (req.query.nome || 'Lucas').toString();
+      const recipient = (req.query.recipient || 'Vovó Teste').toString();
+      const r = await wa.enviarConfirmacao({ phone: to, nome, recipient_name: recipient });
+      return res.status(200).json({ ok: !!(r && r.ok), result: r });
     }
     // análise do funil: junta funnel_events (landing+bot, sessões DISTINTAS) com orders (oferta->pago)
     if (action === 'analytics') {

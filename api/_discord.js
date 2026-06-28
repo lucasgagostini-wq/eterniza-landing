@@ -56,9 +56,21 @@ const notifyVendaAprovada = (p) => send({ title: '🔥 VENDA APROVADA — Eterni
 // 🧾 PIX GERADO — info p/ recuperação (sem menção, não pinga)
 const notifyPixGerado = (p) => send({ title: '🧾 Pix gerado — Eterniza', color: COLOR.pix, fields: fields(p) });
 
+// ⚠️ CONFIRMAÇÃO AUTOMÁTICA FALHOU — pinga o time pra enviar manual (rede de segurança)
+const notifyWaFalhou = (p) => send({
+  title: '⚠️ Confirmação automática FALHOU — envie manual',
+  color: 0xffcc00,
+  fields: [
+    { inline: false, name: 'Comprador', value: p.nome || '—' },
+    { inline: false, name: 'Telefone', value: fmtPhone(p.phone) },
+    { inline: false, name: 'Motivo', value: String(p.motivo || '—').slice(0, 200) },
+    { inline: false, name: 'Data', value: nowSP() },
+  ],
+}, { mention: true });
+
 // teste de integração (admin)
 async function sendTest() {
   return send({ title: '🚀 TESTE — Eterniza', color: 0x00c06e, fields: [{ name: 'Status', value: '✅ Webhook Discord da Eterniza funcionando!' }, { name: 'Data', value: nowSP() }] }, { mention: true });
 }
 
-module.exports = { notifyVendaAprovada, notifyPixGerado, sendTest, MENTION_IDS };
+module.exports = { notifyVendaAprovada, notifyPixGerado, notifyWaFalhou, sendTest, MENTION_IDS };

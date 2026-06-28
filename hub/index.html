@@ -445,7 +445,8 @@
     const ATT = { folha:['🌿 Folha','#22c55e','rgba(34,197,94,.14)'], davi:['🔥 Davi','#f87171','rgba(248,113,113,.14)'] };
     function attTag(o){ const t=ATT[o&&o.attendant]; return t?`<span class="chip" style="color:${t[1]};background:${t[2]};border:1px solid ${t[1]}33">${t[0]}</span>`:`<span class="chip" style="color:#9ca3af;background:rgba(255,255,255,.05);border:1px solid #ffffff14">○ Livre</span>`; }
     function sourceTag(o){ const s=(o.typebot_payload||{}).source; if(s==='homenagem') return '<span class="chip" style="color:#c084fc;background:rgba(192,132,252,.12);border:1px solid #c084fc33">✨ Prévia</span>'; if(o.typebot_payload) return '<span class="chip" style="color:#67e8f9;background:rgba(103,232,249,.1);border:1px solid #67e8f933">🤖 Bot</span>'; return ''; }
-    const confirmTag=o=>(['pago','fila_edicao'].includes(o&&o.status))?'<span class="chip" style="background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.35)">⚡ confirmar</span>':'';
+    // ⚡ só enquanto a confirmação automática NÃO saiu; ✅ quando já foi enviada
+    const confirmTag=o=>{ if(!o||!['pago','fila_edicao'].includes(o.status)) return ''; return o.wa_confirm_sent_at?'<span class="chip" style="background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.35)">✅ confirmado</span>':'<span class="chip" style="background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.35)">⚡ confirmar</span>'; };
     const ALL_STATUS = ['briefing_recebido','checkout_iniciado','recuperacao_pix','pago','fila_edicao','produzindo','pronta','entregue','erro'];
     const FILTERS = [
       {key:'recuperar',label:'Recuperar',test:o=>RECUPERAR.includes(o.status)},
@@ -639,7 +640,7 @@
           <span class="for">${sub}</span>
           <div class="tags">${chip(o.status)}${confirmTag(o)}${recoTag(o)}${attTag(o)}${sourceTag(o)}</div>`;
     }
-    const cardSig=o=>JSON.stringify([o.customer_name,o.recipient_name,o.relationship,o.status,o.created_at,o.recovery_contact_status,o.attendant]);
+    const cardSig=o=>JSON.stringify([o.customer_name,o.recipient_name,o.relationship,o.status,o.created_at,o.recovery_contact_status,o.attendant,o.wa_confirm_sent_at]);
     // RECONCILE: cria/atualiza/move só o que mudou. Cards iguais ficam intactos
     // => não re-anima (acaba a "piscada") e não joga o scroll pro topo.
     function renderFeed(){
@@ -690,7 +691,10 @@
 
       if(editing){ html+=editForm(o); inner.innerHTML=html; return; }
 
-      if(['pago','fila_edicao'].includes(o.status)&&phone) html+=`<div style="background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:13px 15px;margin:10px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:13px;font-weight:700;color:#fcd34d">⚡ Cliente aguardando confirmação</div><div style="font-size:12px;color:#a3a3a3;margin-top:2px">Envie agora para evitar pedido de reembolso</div></div><a class="wpp" href="${waLink(phone,confirmMsg(o))}" target="_blank" rel="noopener" style="flex-shrink:0">📤 Confirmar pedido</a></div>`;
+      if(['pago','fila_edicao'].includes(o.status)&&phone){
+        if(o.wa_confirm_sent_at) html+=`<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.28);border-radius:12px;padding:11px 15px;margin:10px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="font-size:13px;font-weight:700;color:#86efac">✅ Confirmação automática enviada</div><div style="font-size:12px;color:#a3a3a3">· ${esc(fmt(o.wa_confirm_sent_at))}</div></div>`;
+        else html+=`<div style="background:rgba(251,191,36,.09);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:13px 15px;margin:10px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:13px;font-weight:700;color:#fcd34d">⚡ Confirmação automática ainda não saiu</div><div style="font-size:12px;color:#a3a3a3;margin-top:2px">Rede de segurança — envie manual se precisar</div></div><a class="wpp" href="${waLink(phone,confirmMsg(o))}" target="_blank" rel="noopener" style="flex-shrink:0">📤 Confirmar manual</a></div>`;
+      }
       if(o.status==='pronta'&&phone&&o.video_url) html+=`<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.28);border-radius:12px;padding:13px 15px;margin:10px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:13px;font-weight:700;color:#86efac">🎬 Homenagem pronta — entregar agora</div><div style="font-size:12px;color:#a3a3a3;margin-top:2px">O vídeo está pronto e aguardando entrega</div></div><a class="wpp" href="${waLink(phone,deliverMsg(o))}" target="_blank" rel="noopener" style="flex-shrink:0">🎬 Entregar agora</a></div>`;
 
       // dados da homenagem (comum aos dois formatos) — todos os campos coletados no fluxo

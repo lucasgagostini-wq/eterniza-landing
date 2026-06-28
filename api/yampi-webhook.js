@@ -3,8 +3,12 @@
 // FUSÃO: prioriza o telefone do bot vindo em metadata.bot_phone (injetado pela ponte
 // ir-checkout.html). Assim casa com o lead mesmo que o cliente digite outro número no checkout.
 // Auth por ?token= (= YAMPI_TOKEN | CAKTO_SECRET) na URL cadastrada na Yampi.
-const { normalizePhone, pick, getByPath, upsertOrder, sendMetaPurchase } = require('./_lib');
+const { normalizePhone, pick, getByPath, phoneCandidates, sbSelect, sbUpdate, upsertOrder, sendMetaPurchase } = require('./_lib');
 const discord = require('./_discord');
+const wa = require('./_whatsapp');
+
+// ranking do pipeline (não rebaixar status; e detectar a 1ª transição p/ pago)
+const RANK = { erro: 0, briefing_recebido: 1, checkout_iniciado: 2, recuperacao_pix: 2, pago: 3, fila_edicao: 4, produzindo: 5, pronta: 6, entregue: 7 };
 
 // evento/status do Yampi -> status interno. order.paid = pago; order.created/waiting = pix gerado.
 function detectYampiStatus(ev, st) {
@@ -80,7 +84,6 @@ module.exports = async (req, res) => {
     const o = await upsertOrder({ phone_normalized, email, fields: patch, newStatus: status });
     if (o.existed) {
       // não rebaixa: pedido já igual/à frente no pipeline preserva o status atual
-      const RANK = { erro: 0, briefing_recebido: 1, checkout_iniciado: 2, recuperacao_pix: 2, pago: 3, fila_edicao: 4, produzindo: 5, pronta: 6, entregue: 7 };
       if ((RANK[o.status] ?? 0) >= (RANK[status] ?? 0)) { delete patch.status; delete patch.pix_generated_at; }
       await o.update(patch);
     }
@@ -98,6 +101,29 @@ module.exports = async (req, res) => {
       console.log('[yampi-webhook] capi', JSON.stringify(capiResult));
       // Discord: pinga o celular na hora que a venda cai
       discordResult = await discord.notifyVendaAprovada({ valor, nome: name, phone: phoneRaw, email, gateway: 'Yampi', orderId });
+
+      // === Confirmação automática no WhatsApp — 1x por pedido, só na 1ª vez que vira pago ===
+      // Trava lógica (1ª transição p/ pago) + trava dura (coluna wa_confirm_sent_at) => sem envio duplicado.
+      const wasPaid = o.existed && (RANK[o.status] ?? 0) >= RANK.pago;
+      if (!wasPaid && phone_normalized) {
+        try {
+          let oid = o.existed ? o.id : null, sent = false, recip = null, nm = name;
+          try {
+            const rows = await sbSelect(`orders?phone_normalized=in.(${phoneCandidates(phone_normalized).join(',')})&select=id,wa_confirm_sent_at,recipient_name,customer_name&limit=1`);
+            if (Array.isArray(rows) && rows[0]) { oid = rows[0].id; sent = !!rows[0].wa_confirm_sent_at; recip = rows[0].recipient_name; nm = rows[0].customer_name || name; }
+          } catch (e) { /* coluna wa_confirm_sent_at pode não existir ainda (migration pendente) — segue só com a trava lógica */ }
+          if (!sent) {
+            const waRes = await wa.enviarConfirmacao({ phone: phone_normalized, nome: nm, recipient_name: recip });
+            console.log('[yampi-webhook] wa', JSON.stringify(waRes));
+            if (waRes && waRes.ok) {
+              if (oid) { try { await sbUpdate('orders', `id=eq.${encodeURIComponent(oid)}`, { wa_confirm_sent_at: new Date().toISOString() }); } catch (e) { /* coluna ausente: ok, trava lógica cobre */ } }
+            } else if (waRes && !waRes.skipped) {
+              // falhou de verdade (não foi desligado/sem config) -> avisa o time pra enviar manual
+              await discord.notifyWaFalhou({ nome: nm, phone: phoneRaw, motivo: waRes.error || ('HTTP ' + waRes.status) });
+            }
+          }
+        } catch (e) { console.error('[yampi-webhook] wa erro', String((e && e.message) || e).slice(0, 150)); }
+      }
     } else if (detected === 'recuperacao_pix') {
       discordResult = await discord.notifyPixGerado({ valor, nome: name, phone: phoneRaw, email, gateway: 'Yampi', orderId });
     }
