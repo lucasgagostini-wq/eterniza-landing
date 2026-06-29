@@ -461,6 +461,8 @@
     const fmtFull = iso=>{try{return new Date(iso).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(e){return '—'}};
     const money = v=>v==null?null:'R$ '+Number(v).toFixed(2).replace('.',',');
     const waLink=(phone,text)=>`https://wa.me/${(phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(text)}`;
+    // remove DDI 55 do número antes de exibir/copiar (wa.me precisa do 55; exibição não)
+    const stripCC=p=>(p||'').replace(/\D/g,'').replace(/^55(\d{10,11})$/,'$1');
     const firstName = n => (n||'').trim().split(/\s+/)[0]||'';
     // 2º WhatsApp (número alternativo) — guardado em recovery_notes como "tel2:<norm>"
     const phone2 = o => { const m=String((o&&o.recovery_notes)||'').match(/tel2:(\d{12,13})/); return m?m[1]:''; };
@@ -555,7 +557,7 @@
       return L.join('\n');
     }
     function buyerText(o){
-      const tel=(o.phone_normalized||o.customer_phone||'').replace(/\D/g,'').replace(/^55(\d{10,11})$/,'$1');
+      const tel=stripCC(o.phone_normalized||o.customer_phone||'');
       return `Nome\n${o.customer_name||'—'}\n\nE-mail\n${o.customer_email||'—'}\n\nCelular\n${tel||'—'}`;
     }
 
@@ -710,8 +712,8 @@
         ${obj?`<div style="margin-top:9px"><div class="ov" style="margin-bottom:3px">Objetivo da homenagem</div><div class="objv">${esc(obj)}</div></div>`:''}`;
       // contato/pagamento — só campos presentes (lead não tem e-mail/valor; pago mostra o valor real, já com order bump)
       const cf=[];
-      if(phone) cf.push(`<div><div class="k">WhatsApp</div><div class="v cp mono" data-copy="${esc(o.customer_phone||phone)}">${esc(o.customer_phone||phone)}</div></div>`);
-      { const p2=phone2(o); if(p2){ const m2=['pago','fila_edicao'].includes(o.status)?confirmMsg(o):(o.status==='pronta'||o.status==='entregue')?deliverMsg(o):RECUPERAR.includes(o.status)?recoveryMsg(o):''; cf.push(`<div><div class="k">2º WhatsApp <span style="color:#fcd34d" title="número alternativo — um dos dois pode estar errado">⚠</span></div><div class="v" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cp mono" data-copy="${esc(p2)}">${esc(p2)}</span><a class="wpp" style="padding:2px 10px;font-size:12px" href="${waLink(p2,m2)}" target="_blank" rel="noopener">📲 Chamar</a></div></div>`); } }
+      if(phone) cf.push(`<div><div class="k">WhatsApp</div><div class="v cp mono" data-copy="${esc(stripCC(o.customer_phone||phone))}">${esc(stripCC(o.customer_phone||phone))}</div></div>`);
+      { const p2=phone2(o); if(p2){ const m2=['pago','fila_edicao'].includes(o.status)?confirmMsg(o):(o.status==='pronta'||o.status==='entregue')?deliverMsg(o):RECUPERAR.includes(o.status)?recoveryMsg(o):''; cf.push(`<div><div class="k">2º WhatsApp <span style="color:#fcd34d" title="número alternativo — um dos dois pode estar errado">⚠</span></div><div class="v" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cp mono" data-copy="${esc(stripCC(p2))}">${esc(stripCC(p2))}</span><a class="wpp" style="padding:2px 10px;font-size:12px" href="${waLink(p2,m2)}" target="_blank" rel="noopener">📲 Chamar</a></div></div>`); } }
       if(o.customer_email) cf.push(`<div><div class="k">E-mail</div><div class="v cp" data-copy="${esc(o.customer_email)}">${esc(o.customer_email)}</div></div>`);
       if(o.valor!=null) cf.push(`<div><div class="k">Valor pago</div><div class="v">${esc(money(o.valor))}</div></div>`);
       if(o.pix_generated_at) cf.push(`<div><div class="k">Pix gerado</div><div class="v mono">${esc(fmt(o.pix_generated_at))}</div></div>`);
