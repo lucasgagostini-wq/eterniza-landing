@@ -50,6 +50,25 @@ async function uploadLeadPhoto(base64, mime) {
   return `${SB}/storage/v1/object/public/${PHOTO_BUCKET}/${path}`;
 }
 
+// PostgREST aplica um TETO de linhas por request (max-rows); um `limit` alto NÃO o burla.
+// Sem `order`, o teto devolve as linhas MAIS ANTIGAS — e era isso que zerava a atribuição do
+// funil em janelas largas (7d+): os eventos recentes (go_typebot/h_quiz) caíam fora do corte,
+// então `assigned` ia a 0 e Conversão / R$-visitante ficavam em branco. Aqui paginamos por
+// offset (ordem estável por created_at; funnel_events é só-insere) e juntamos TODAS as linhas.
+async function sbSelectAllEvents(baseQuery) {
+  const out = [];
+  let offset = 0, pageSize = null;
+  for (let page = 0; page < 1000; page++) {
+    const rows = await sbSelect(`${baseQuery}&order=created_at.asc&limit=100000&offset=${offset}`);
+    if (!Array.isArray(rows) || rows.length === 0) break;
+    out.push(...rows);
+    if (pageSize === null) pageSize = rows.length;            // 1ª página = max-rows efetivo do servidor
+    if (rows.length < pageSize || out.length > 500000) break; // última página (ou trava de segurança)
+    offset += rows.length;
+  }
+  return out;
+}
+
 module.exports = async (req, res) => {
   const ADMIN = (process.env.ADMIN_TOKEN || process.env.CAKTO_SECRET || '').trim();
   const token = (req.headers['x-admin-token'] || req.query.token || '').toString().trim();
@@ -122,7 +141,7 @@ module.exports = async (req, res) => {
         const since = hours ? new Date(Date.now() - hours * 3600 * 1000).toISOString() : null;
         if (since) f = `&created_at=gte.${encodeURIComponent(since)}`;
       }
-      const evs = await sbSelect(`funnel_events?select=session_id,step${f}&limit=200000`).catch(() => []);
+      const evs = await sbSelectAllEvents(`funnel_events?select=session_id,step${f}`).catch(() => []);
       // desde quando existe rastreamento (1º evento de todos os tempos) -> exibir "metrificando desde"
       const firstEv = await sbSelect(`funnel_events?select=created_at&order=created_at.asc&limit=1`).catch(() => []);
       const trackingSince = (Array.isArray(firstEv) && firstEv[0]) ? firstEv[0].created_at : null;
@@ -165,7 +184,7 @@ module.exports = async (req, res) => {
         if (since) f = `&created_at=gte.${encodeURIComponent(since)}`;
       }
       // denominador: sessões DISTINTAS mandadas pra cada gateway
-      const evs = await sbSelect(`funnel_events?select=session_id,step&step=in.(go_cakto,go_yampi)${f}&limit=200000`).catch(() => []);
+      const evs = await sbSelectAllEvents(`funnel_events?select=session_id,step&step=in.(go_cakto,go_yampi)${f}`).catch(() => []);
       const aset = { cakto: new Set(), yampi: new Set() };
       for (const e of (Array.isArray(evs) ? evs : [])) { (e.step === 'go_yampi' ? aset.yampi : aset.cakto).add(e.session_id); }
       // vendas: pega só o gateway do jsonb (leve), status e valor
@@ -209,7 +228,7 @@ module.exports = async (req, res) => {
         'g1_abertura', 'g2_porquem', 'g7_foto', 'g8_whatsapp',
         'h_quiz', 'h_nome', 'h_memoria', 'h_whatsapp', 'h_foto', 'h_previa', 'h_checkout',
       ];
-      const evs = await sbSelect(`funnel_events?select=session_id,step&step=in.(${steps.join(',')})${f}&limit=200000`).catch(() => []);
+      const evs = await sbSelectAllEvents(`funnel_events?select=session_id,step&step=in.(${steps.join(',')})${f}`).catch(() => []);
       const sets = {};
       for (const e of (Array.isArray(evs) ? evs : [])) {
         (sets[e.step] || (sets[e.step] = new Set())).add(e.session_id);
