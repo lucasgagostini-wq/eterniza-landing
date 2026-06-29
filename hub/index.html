@@ -464,6 +464,8 @@
     const firstName = n => (n||'').trim().split(/\s+/)[0]||'';
     // 2º WhatsApp (número alternativo) — guardado em recovery_notes como "tel2:<norm>"
     const phone2 = o => { const m=String((o&&o.recovery_notes)||'').match(/tel2:(\d{12,13})/); return m?m[1]:''; };
+    // IP/região de onde o lead acessou (capturado no cadastro, guardado em typebot_payload)
+    function ipLine(o){ const tp=(o&&o.typebot_payload)||{}; const ip=tp._ip,geo=tp._geo,at=tp._ip_at; if(!ip&&!geo) return ''; return `<div class="mono" style="font-size:10.5px;color:var(--muted2);margin-top:4px" title="IP/região de onde o lead acessou">🌐 ${ip?esc(ip):'IP n/d'}${geo?' · '+esc(geo):''}${at?' · '+esc(fmt(at)):''}</div>`; }
     function chip(status){const t=TAG[status]||{l:status,c:'#9ca3af,#444,rgba(255,255,255,.06)'};const[fg,,bgc]=t.c.split(',');const bg=t.c.split(',').slice(2).join(',');return `<span class="chip" style="color:${fg};background:${bg};border:1px solid ${fg}33">${esc(t.l)}</span>`;}
     function toast(m,kind){const t=$('toast');t.textContent=m;t.className='show'+(kind?' '+kind:'');clearTimeout(toast._t);toast._t=setTimeout(()=>t.className='',2400)}
 
@@ -683,6 +685,7 @@
           <div style="min-width:0">
             <div class="d-buyer">${o.customer_name?'👤 '+esc(o.customer_name)+' <span class="tagrole">(Comprador)</span>':'<span style="color:#888">👤 comprador ainda não identificado</span>'}</div>
             <div class="htags" style="margin-top:7px">${chip(o.status)}<span class="mono" style="font-size:11px;color:var(--muted2)">${esc(fmt(o.created_at))}</span></div>
+            ${ipLine(o)}
           </div>
           <div class="acts">
             <button class="btn ghost sm" data-edit="${o.id}">✎ Editar</button>

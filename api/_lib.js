@@ -17,6 +17,20 @@ function normalizePhone(raw) {
   return d.startsWith('55') ? d : '55' + d;
 }
 
+// IP do cliente (1º do x-forwarded-for que a Vercel injeta) + geo dos headers de edge da Vercel.
+function clientIp(req) {
+  const xff = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
+  return xff || (req.headers['x-real-ip'] || '').toString().trim() || (req.socket && req.socket.remoteAddress) || '';
+}
+function clientGeo(req) {
+  const h = req.headers || {};
+  const dec = s => { try { return decodeURIComponent(String(s || '')); } catch (e) { return String(s || ''); } };
+  const city = dec(h['x-vercel-ip-city']);
+  const region = (h['x-vercel-ip-country-region'] || '').toString();
+  const country = (h['x-vercel-ip-country'] || '').toString();
+  return [city, region, country].filter(Boolean).join(', ');
+}
+
 const getByPath = (src, path) => path.split('.').reduce((c, k) => (c && typeof c === 'object' ? c[k] : undefined), src);
 const pick = (...vals) => vals.find(v => v !== undefined && v !== null && v !== '') ?? null;
 const firstOf = (src, paths) => { for (const p of paths) { const v = getByPath(src, p); if (v !== undefined && v !== null && v !== '') return v; } return null; };
@@ -131,4 +145,4 @@ async function sendMetaPurchase({ value, currency = 'BRL', email, phone, fbp, fb
   } catch (e) { return { ok: false, error: String(e.message || e).slice(0, 200) }; }
 }
 
-module.exports = { SB, KEY, H, normalizePhone, phoneCandidates, getByPath, pick, firstOf, sbSelect, sbInsert, sbUpdate, sbDelete, detectCaktoStatus, upsertOrder, sendMetaPurchase };
+module.exports = { SB, KEY, H, normalizePhone, phoneCandidates, getByPath, pick, firstOf, clientIp, clientGeo, sbSelect, sbInsert, sbUpdate, sbDelete, detectCaktoStatus, upsertOrder, sendMetaPurchase };

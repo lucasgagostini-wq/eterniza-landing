@@ -1,7 +1,7 @@
 // Gera a PRÉVIA da homenagem: foto do ente querido -> imagem "ao lado de Cristo" (Google Gemini),
 // hospeda no Supabase Storage e devolve a URL pública. Chamado pelo bot logo após a foto.
 // Auth por ?token= (= PREVIEW_TOKEN | CAKTO_SECRET) p/ não deixar qualquer um gastar a API.
-const { SB, KEY } = require('./_lib');
+const { SB, KEY, clientIp, sbSelect, sbInsert } = require('./_lib');
 let sharp = null; try { sharp = require('sharp'); } catch (e) { /* sem sharp: sobe imagem limpa */ }
 
 // Provedor de imagem: usa OpenRouter se a chave existir (pré-pago avulso, sem mínimo de R$200 do Google),
@@ -214,6 +214,22 @@ module.exports = async (req, res) => {
   const fotoB64 = (body.fotoB64 || body.imageB64 || '').toString().trim();
   if (!photoUrl && !fotoB64) return res.status(400).json({ error: 'foto_missing' });
 
+  // Anti-abuso de créditos: limita prévias por IP (janela móvel). Time/interno (token) NÃO é limitado.
+  // Fail-open: qualquer erro no contador libera a geração (nunca trava um cliente real).
+  const isInternal = !!(TOKEN && sent === TOKEN);
+  const ip = clientIp(req);
+  const LIMIT = parseInt(process.env.PREVIEW_DAILY_LIMIT || '3', 10);
+  const WINDOW_H = parseInt(process.env.PREVIEW_WINDOW_HOURS || '24', 10);
+  if (!isInternal && ip && LIMIT > 0) {
+    try {
+      const since = new Date(Date.now() - WINDOW_H * 3600 * 1000).toISOString();
+      const rows = await sbSelect(`preview_quota?ip=eq.${encodeURIComponent(ip)}&created_at=gte.${encodeURIComponent(since)}&select=id`);
+      if (Array.isArray(rows) && rows.length >= LIMIT) {
+        return res.status(429).json({ error: 'quota_exceeded', limit: LIMIT, windowHours: WINDOW_H });
+      }
+    } catch (e) { console.log('[preview] quota check falhou (libera):', String(e && e.message || e).slice(0, 120)); }
+  }
+
   try {
     // foto pode vir como URL (fetch) OU base64 direto no body (data: URL ou base64 cru)
     let src;
@@ -232,6 +248,8 @@ module.exports = async (req, res) => {
     const wm = noWm ? gen : await applyWatermark(gen.base64, gen.mime);
     const previewUrl = await uploadToStorage(wm.base64, wm.mime);
     console.log('[preview] ok (' + provider + ') ->', previewUrl);
+    // conta a prévia (só público) p/ o limite por IP. Falhar aqui não impede a entrega.
+    if (!isInternal && ip) { try { await sbInsert('preview_quota', { ip }, 'return=minimal'); } catch (e) { /* não contou: ok */ } }
     return res.status(200).json({ ok: true, previewUrl, originalUrl: origUrl, provider });
   } catch (e) {
     const detail = String(e && e.message || e).slice(0, 320);

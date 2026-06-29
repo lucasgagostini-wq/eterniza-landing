@@ -355,6 +355,12 @@
     <h3 class="serif center" style="margin-top:30px;font-size:22px">Pronto para emocionar<br>toda a sua família?</h3>
     <button class="btn btn-green" style="margin-top:14px" onclick="checkout()">Finalizar minha homenagem</button>
     <div class="secure" style="margin-top:10px">Pague no Pix ou cartão · Garantia de 7 dias</div>
+
+    <div style="margin-top:28px;text-align:center;border-top:1px solid rgba(0,0,0,.07);padding-top:20px">
+      <p class="small muted" style="margin:0 0 11px">Ficou com alguma dúvida antes de finalizar? Fale com a gente:</p>
+      <a href="https://wa.me/5519990097606?text=Ol%C3%A1!%20Tenho%20uma%20d%C3%BAvida%20sobre%20a%20homenagem%20em%20v%C3%ADdeo%20%F0%9F%95%8A%EF%B8%8F" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:9px;background:#25D366;color:#fff;font-weight:700;padding:13px 24px;border-radius:999px;text-decoration:none;font-size:15px;box-shadow:0 6px 18px rgba(37,211,102,.32)">💬 Tirar dúvidas no WhatsApp</a>
+      <div class="small muted" style="margin-top:8px">+55 19 99009-7606</div>
+    </div>
   </section>
 
   <div class="foot">Eterniza · feito à mão, com respeito e carinho 🕊️</div>
@@ -539,8 +545,10 @@
     track('h_foto');
     var rel = state.quem==='Outro familiar/amigo' ? '' : state.quem;
     fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fotoB64:state.fotoB64,nome:state.nome,quem:rel,frase:state.frase,memoria:state.memoria,memoCustom:state.memoCustom})})
-    .then(function(r){return r.json();})
-    .then(function(j){
+    .then(function(r){return r.json().then(function(j){return {status:r.status,j:j};},function(){return {status:r.status,j:null};});})
+    .then(function(o){
+      var j=o.j;
+      if(o.status===429||(j&&j.error==='quota_exceeded')){ showQuotaLimit(); return; }
       if(!j||!j.previewUrl) throw new Error(j&&j.error||'sem_previa');
       state.previewUrl=j.previewUrl;
       track('h_previa');
@@ -556,6 +564,16 @@
       document.getElementById('loadTitle').textContent='Ops, tivemos um probleminha';
       document.getElementById('checks').innerHTML='<li class="on" style="justify-content:center;color:var(--gold-d)"><a href="javascript:gerar()" style="color:var(--gold-d)">Não rolou gerar agora — tentar de novo</a></li>';
     });
+  }
+
+  // Limite diário de prévias por IP atingido -> aviso + botão de contato (mesmo número do suporte).
+  function showQuotaLimit(){
+    clearLoad();
+    document.getElementById('loadTitle').textContent='Suas prévias diárias acabaram';
+    var msg='Olá! Tentei gerar minha prévia da homenagem mas atingi o limite diário. Podem me ajudar? 🙏';
+    document.getElementById('checks').innerHTML=
+      '<li class="on" style="justify-content:center;text-align:center;color:var(--gold-d);line-height:1.5">Você já gerou suas prévias de hoje. Aguarde 24 horas para tentar novamente — ou fale com a gente agora:</li>'+
+      '<li style="justify-content:center;margin-top:14px"><a class="btn btn-green" href="https://wa.me/5519990097606?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" style="text-decoration:none">💬 Falar no WhatsApp</a></li>';
   }
 
   function checkout(){

@@ -2,7 +2,7 @@
 // e cria/atualiza o lead em `orders` (status briefing_recebido). Chamado pelo bloco
 // HTTP do Typebot via QUERY PARAMS (encoda acentos/aspas com segurança) ou body JSON.
 // IMPORTANTE: no bot, `nome` = o HOMENAGEADO (falecido) -> recipient_name.
-const { normalizePhone, pick, upsertOrder } = require('./_lib');
+const { normalizePhone, pick, clientIp, clientGeo, upsertOrder } = require('./_lib');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,7 +31,8 @@ module.exports = async (req, res) => {
     relationship: pick(src.parente, src.relationship, src.relacao, src.grau),
     memory: pick(src.memoria, src.memory, src.lembranca, src.historia),
     photo_url: pick(src.foto, src.photo_url, src.foto_url, src.imagem),
-    typebot_payload: src,
+    // payload do lead + IP/região (capturados no servidor; exibidos no hub perto do nome)
+    typebot_payload: { ...src, _ip: clientIp(req) || undefined, _geo: clientGeo(req) || undefined, _ip_at: new Date().toISOString() },
   };
   Object.keys(fields).forEach(k => (fields[k] === undefined || fields[k] === null) && delete fields[k]);
 
