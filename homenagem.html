@@ -305,7 +305,7 @@
     <p class="center small muted" style="margin-top:0">Veja abaixo um exemplo finalizado pela nossa equipe — é assim que a homenagem fica em 24h após o pagamento:</p>
     <h3 class="serif center" style="font-size:20px;margin-top:18px">Como ficará a sua homenagem</h3>
     <div class="media" style="max-width:280px;margin-top:10px">
-      <iframe id="ytExample" src="https://www.youtube.com/embed/YLexWjKjYjk?rel=0&enablejsapi=1&playsinline=1&mute=1&controls=1" title="Eterniza — exemplo de homenagem finalizado" frameborder="0" allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;display:block;border:0"></iframe>
+      <video id="ytExample" src="/videos/exemplo-homenagem.mp4" playsinline muted loop preload="metadata" style="width:100%;height:100%;display:block;border:0;object-fit:cover;border-radius:inherit"></video>
     </div>
 
     <div class="reserva">🕯️ Sua vaga na fila de edição está reservada · entrega em até 24h</div>
@@ -623,25 +623,17 @@
     el.querySelectorAll('img').forEach(function(im){ im.addEventListener('click', function(e){ if(moved) e.preventDefault(); }); });
   })();
 
-  // vídeo-exemplo (YouTube): toca sozinho (mudo) quando entra na tela; pausa ao sair.
-  // mudo é obrigatório p/ autoplay em mobile/iOS — a pessoa toca pra ativar o som.
+  // vídeo-exemplo: toca sozinho (mudo) quando entra na tela; pausa ao sair.
   (function(){
-    var iframe=document.getElementById('ytExample'); if(!iframe) return;
-    var player=null, ready=false, wantPlay=false;
-    var tag=document.createElement('script'); tag.src='https://www.youtube.com/iframe_api'; document.head.appendChild(tag);
-    window.onYouTubeIframeAPIReady=function(){
-      try{
-        player=new YT.Player('ytExample',{ events:{ onReady:function(){ ready=true; try{player.mute();}catch(e){} if(wantPlay){ try{player.playVideo();}catch(e){} } } } });
-      }catch(e){}
-    };
-    function play(){ if(ready&&player&&player.playVideo){ try{player.mute();player.playVideo();}catch(e){} } else { wantPlay=true; } }
-    function pause(){ if(ready&&player&&player.pauseVideo){ try{player.pauseVideo();}catch(e){} } else { wantPlay=false; } }
+    var v=document.getElementById('ytExample'); if(!v) return;
+    function play(){ v.muted=true; v.play().catch(function(){}); }
+    function pause(){ v.pause(); }
     if('IntersectionObserver' in window){
       var io=new IntersectionObserver(function(es){
-        es.forEach(function(e){ if(e.isIntersecting && e.intersectionRatio>=0.4) play(); else pause(); });
+        es.forEach(function(e){ if(e.isIntersecting&&e.intersectionRatio>=0.4) play(); else pause(); });
       },{threshold:[0,0.4,0.8]});
-      io.observe(iframe);
-    }
+      io.observe(v);
+    } else { play(); }
   })();
 </script>
 </body>
