@@ -278,7 +278,7 @@ module.exports = async (req, res) => {
           getByPath(cp, 'data.metadata.sid'),
         );
       };
-      const ords = await sbSelect(`orders?select=status,valor,typebot_payload,cakto_payload${f}&limit=100000`).catch(() => []);
+      const ords = await sbSelect(`orders?select=id,status,valor,typebot_payload,cakto_payload${f}&limit=100000`).catch(() => []);
       const PAID = ['pago', 'fila_edicao', 'produzindo', 'pronta', 'entregue'];
       // pedido chegou ao checkout = gerou pix OU pagou (sinal de pedido p/ complementar o evento de página)
       const REACHED_CO = ['checkout_iniciado', 'recuperacao_pix', ...PAID];
@@ -286,15 +286,18 @@ module.exports = async (req, res) => {
         const sid = extractSid(o);
         // `source==='homenagem'` é gravado no lead da página -> atribuição definitiva, à prova de sid.
         const isHomenagem = (o.typebot_payload || {}).source === 'homenagem';
+        // Atribuição à prova de sid: homenagem é DEFINITIVA (source gravado no lead da página);
+        // TODO o resto cai no Typebot (funil do bot, dominante). NUNCA descarta o pedido — o bot
+        // não propaga o sid da landing, então exigir sid perdia venda/checkout (bug corrigido 29/06).
         const side = isHomenagem ? 'homenagem'
           : sid && assigned.homenagem.has(sid) ? 'homenagem'
-          : sid && assigned.typebot.has(sid) ? 'typebot' : null;
-        if (!side) continue;
+          : 'typebot';
         const s = out[side];
         s.leads++;
         if (PAID.includes(o.status)) { s.paid++; s.revenue += Number(o.valor) || 0; }
         else if (o.status === 'recuperacao_pix') s.recuperacao++;
-        if (sid && REACHED_CO.includes(o.status)) coSids[side].add(sid);
+        // checkout = pedido que chegou ao pagamento; dedup por sid (quando há) OU pelo id do pedido.
+        if (REACHED_CO.includes(o.status)) coSids[side].add(sid || ('ord:' + o.id));
       }
       out.typebot.checkout = coSids.typebot.size;
       out.homenagem.checkout = coSids.homenagem.size;
