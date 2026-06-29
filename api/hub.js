@@ -1,4 +1,18 @@
-// Backend do Delivery Hub — Eterniza. Protegido por token (ADMIN_TOKEN ou CAKTO_SECRET).
+// ============================================================================
+// Backend do Delivery Hub — Eterniza (função serverless única, roteada por ?action=).
+// ----------------------------------------------------------------------------
+// Segurança: TODA request exige token (ADMIN_TOKEN ou CAKTO_SECRET) no header
+//   x-admin-token (ou ?token=). Anti-bruteforce in-memory por IP (3 erros → trava 30s).
+//   Toda entrada do usuário vai encodeURIComponent() nos filtros PostgREST (sem injeção).
+// Ações (req.query.action):
+//   list ............. lista pedidos (fallback de colunas opcionais p/ migrations pendentes)
+//   analytics/ab/quiz_ab  dashboards de funil e A/B (lê funnel_events + orders)
+//   update/edit/set_video assign/recovery  mutações de 1 pedido
+//   add_photo/del_photo/set_main_photo  galeria de fotos do lead (bucket público)
+//   import/seed/delete/purge_empty_leads/purge_track  manutenção/admin
+//   watest/discord_test/raw  diagnósticos (não tocam dados de produção, exceto seed)
+// Resposta: sempre JSON; erro inesperado cai no catch geral → 500 { error, detail }.
+// ============================================================================
 const { sbSelect, sbUpdate, sbInsert, sbDelete, normalizePhone, getByPath, pick, SB, KEY } = require('./_lib');
 const wa = require('./_whatsapp');
 

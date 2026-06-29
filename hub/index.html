@@ -57,6 +57,8 @@
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;font-weight:600;font-size:13px;padding:9px 13px;cursor:pointer;border:1px solid var(--line-hard);background:var(--surface-raised);color:var(--fg2);transition:filter .15s,transform .07s,border-color .15s}
     .btn:hover{filter:brightness(1.18)}.btn:active{transform:scale(.98)}
     .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    /* foco de teclado visível nos controles custom (spans viram role=button via applyA11y) */
+    [role="button"]:focus-visible,.feed-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
     .btn.ghost{background:transparent;color:var(--muted)}
     .btn.danger{background:rgba(127,29,29,.4);color:#fca5a5;border-color:#7f1d1d}
@@ -333,7 +335,7 @@
       <div class="brand">Delivery Hub — Eterniza</div>
       <p>Área restrita</p>
       <form id="loginForm">
-        <input id="senha" type="password" placeholder="Senha de administrador" autocomplete="current-password" />
+        <input id="senha" type="password" placeholder="Senha de administrador" autocomplete="current-password" aria-label="Senha de administrador" />
         <button class="btn primary" type="submit" style="width:100%;margin-top:10px;padding:11px">Entrar</button>
       </form>
       <div class="erro" id="loginErro"></div>
@@ -365,7 +367,7 @@
     <div class="body">
       <aside class="feed">
         <div class="feed-search">
-          <input id="feedSearch" type="search" placeholder="🔍 Buscar lead por número ou nome…" autocomplete="off" spellcheck="false" inputmode="search">
+          <input id="feedSearch" type="search" placeholder="🔍 Buscar lead por número ou nome…" autocomplete="off" spellcheck="false" inputmode="search" aria-label="Buscar lead por número ou nome">
           <button id="feedSearchClear" type="button" title="Limpar busca" aria-label="Limpar busca">✕</button>
         </div>
         <div class="feed-dates" id="attFilters"></div>
@@ -387,8 +389,8 @@
     <footer class="status" id="status"></footer>
   </div>
 
-  <div id="toast"></div>
-  <div id="lb"><img src="" alt="foto ampliada"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="lb" role="dialog" aria-modal="true" aria-label="Foto ampliada"><img src="" alt="Foto ampliada"></div>
 
   <!-- PAINEL DE ANÁLISE (funil) -->
   <div id="analytics">
@@ -414,6 +416,26 @@
   </div>
 
   <script>
+  /* ============================================================================
+     DELIVERY HUB — Eterniza · front-end (vanilla JS, sem build/framework)
+     ----------------------------------------------------------------------------
+     SPA de 1 arquivo, servida estática pela Vercel; conversa SÓ com /api/hub
+     (mesmo token do login, no header x-admin-token). É de propósito sem framework:
+     a ferramenta precisa ser editável na unha, à prova de balas e leve no celular.
+
+     Mapa do arquivo (de cima pra baixo):
+       • Estado global ........ token, ORDERS[], FILTER, selId, datas, ATT_FILTER
+       • Constantes/UI ........ TAG (status→cor), ATT (atendente), FILTERS, mensagens
+       • Helpers .............. esc/fmt/money/waLink, copyText (cópia robusta), applyA11y
+       • api() ................ wrapper de fetch (querystring + token + trata 401/429)
+       • Galeria .............. carrossel de fotos do lead + arrastar-soltar
+       • RENDER ............... renderFilters/Feed/Detail/Status — reconcile sem flicker
+       • EVENTOS .............. 1 listener de click delegado + drag/drop + busca
+       • load()/silentLoad() .. carga inicial + refresh silencioso a cada 10s
+       • ANÁLISE ............. painel de funil + A/B (fetch próprio, refresh 20s)
+     Acessibilidade: spans clicáveis viram role=button/tabindex via applyA11y();
+     o keydown global converte Enter/Espaço em clique. Toast tem aria-live.
+     ============================================================================ */
     const $ = id => document.getElementById(id);
     const TKEY = 'eterniza_admin_token';
     let token = sessionStorage.getItem(TKEY) || '';
@@ -470,6 +492,44 @@
     function ipLine(o){ const tp=(o&&o.typebot_payload)||{}; const ip=tp._ip,geo=tp._geo,at=tp._ip_at; if(!ip&&!geo) return ''; return `<div class="mono" style="font-size:10.5px;color:var(--muted2);margin-top:4px" title="IP/região de onde o lead acessou">🌐 ${ip?esc(ip):'IP n/d'}${geo?' · '+esc(geo):''}${at?' · '+esc(fmt(at)):''}</div>`; }
     function chip(status){const t=TAG[status]||{l:status,c:'#9ca3af,#444,rgba(255,255,255,.06)'};const[fg,,bgc]=t.c.split(',');const bg=t.c.split(',').slice(2).join(',');return `<span class="chip" style="color:${fg};background:${bg};border:1px solid ${fg}33">${esc(t.l)}</span>`;}
     function toast(m,kind){const t=$('toast');t.textContent=m;t.className='show'+(kind?' '+kind:'');clearTimeout(toast._t);toast._t=setTimeout(()=>t.className='',2400)}
+
+    // Cópia robusta — antes o código dava "Copiado ✓" mesmo quando a escrita falhava (permissão
+    // negada / contexto sem HTTPS). Aqui só confirma quando REALMENTE copiou; com fallback legado.
+    async function copyText(text,okMsg){
+      text=text==null?'':String(text);
+      try{
+        if(navigator.clipboard&&window.isSecureContext){ await navigator.clipboard.writeText(text); }
+        else{
+          const ta=document.createElement('textarea');
+          ta.value=text; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+          document.body.appendChild(ta); ta.select();
+          const ok=document.execCommand&&document.execCommand('copy'); ta.remove();
+          if(!ok) throw new Error('execCommand_copy_failed');
+        }
+        toast(okMsg||'Copiado ✓','ok');
+      }catch(e){ toast('Não consegui copiar — selecione e copie manualmente','err'); }
+    }
+
+    // ===== Acessibilidade: controles custom (spans clicáveis) operáveis por teclado =====
+    // Filtros, pills e toggles são <span> com data-*; sem role/tabindex não recebem foco nem
+    // respondem a Enter/Espaço. applyA11y() roda após cada render (idempotente); o keydown global
+    // converte Enter/Espaço no controle focado em clique (o listener de click delegado trata o resto).
+    const A11Y_SEL='[data-f],[data-rc],[data-att],[data-wme],[data-fpreset],[data-preset],[data-fatt],[data-sel]';
+    function applyA11y(root){
+      (root||document).querySelectorAll(A11Y_SEL).forEach(el=>{
+        if(!el.hasAttribute('role')) el.setAttribute('role','button');
+        if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+      });
+    }
+    document.addEventListener('keydown',e=>{
+      if(e.key!=='Enter'&&e.key!==' ')return;
+      const el=document.activeElement;
+      if(el&&el.matches&&el.matches(A11Y_SEL)){ e.preventDefault(); el.click(); }
+    });
+
+    // Rede de segurança: nada de erro silencioso — vai pro console (ajuda a depurar no celular).
+    window.addEventListener('unhandledrejection',ev=>console.error('[hub] rejeição não tratada:',ev&&ev.reason));
+    window.addEventListener('error',ev=>{ if(ev&&ev.error) console.error('[hub] erro não tratado:',ev.error); });
 
     // ===== filtro por data (fuso LOCAL do operador, ex.: BRT) — feed + análise =====
     const pad2=n=>String(n).padStart(2,'0');
@@ -592,7 +652,8 @@
     }
 
     // ================= RENDER =================
-    function counts(){const c={};FILTERS.forEach(f=>c[f.key]=ORDERS.filter(f.test).length);return c}
+    // contagem por aba num único passe (evita 5 .filter() alocando arrays a cada render)
+    function counts(){const c={};FILTERS.forEach(f=>c[f.key]=0);for(const o of ORDERS)for(const f of FILTERS)if(f.test(o))c[f.key]++;return c}
     function renderFilters(){
       const c=counts();
       $('filters').innerHTML=FILTERS.map(f=>
@@ -605,6 +666,7 @@
       const cnts={todos:ORDERS.length,folha:ORDERS.filter(o=>o.attendant==='folha').length,davi:ORDERS.filter(o=>o.attendant==='davi').length,none:ORDERS.filter(o=>!o.attendant).length};
       const items=[['todos','Todos'],['folha','🌿 Folha'],['davi','🔥 Davi'],['none','○ Livre']];
       box.innerHTML=items.map(([k,l])=>`<span class="p ${ATT_FILTER===k?'on':''}" data-fatt="${k}">${l} <span style="font-size:10px;opacity:.65">${cnts[k]}</span></span>`).join('');
+      applyA11y();
     }
     function applyMe(){
       const me=localStorage.getItem('etz_hub_me')||'';
@@ -671,6 +733,7 @@
         prev=el;
       }
       host.querySelectorAll('.feed-card[data-sel]').forEach(el=>{ if(!seen.has(el.dataset.sel)) el.remove(); });
+      applyA11y(host);
     }
     function kv(k,v,copy){const empty=v==null||v==='';return `<div><div class="k">${k}</div><div class="v ${empty?'empty':''} ${(!empty&&copy)?'cp':''}" ${(!empty&&copy)?`data-copy="${esc(v)}"`:''}>${empty?'—':esc(v)}</div></div>`}
 
@@ -696,7 +759,7 @@
         </div>
         <div class="pills" style="margin-bottom:4px;margin-top:2px">${[['','○ Livre'],['folha','🌿 Folha'],['davi','🔥 Davi']].map(([k,l])=>`<span class="p ${(o.attendant||'')===k?'on':''}" data-att="${o.id}|${k}">${l}</span>`).join('')}</div>`;
 
-      if(editing){ html+=editForm(o); inner.innerHTML=html; return; }
+      if(editing){ html+=editForm(o); inner.innerHTML=html; applyA11y(inner); return; }
 
       if(['pago','fila_edicao'].includes(o.status)&&phone){
         if(o.wa_confirm_sent_at) html+=`<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.28);border-radius:12px;padding:11px 15px;margin:10px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="font-size:13px;font-weight:700;color:#86efac">✅ Confirmação automática enviada</div><div style="font-size:12px;color:#a3a3a3">· ${esc(fmt(o.wa_confirm_sent_at))}</div></div>`;
@@ -796,7 +859,7 @@
           </div></div>`;
       }
 
-      inner.innerHTML=html;
+      inner.innerHTML=html; applyA11y(inner);
     }
 
     function editForm(o){
@@ -831,6 +894,7 @@
         `<span class="m" data-f="produzir"><b>${c.produzir}</b> produzir</span><span class="sep">·</span>`+
         `<span class="m" data-f="entregues"><b>${c.entregues}</b> entregues</span>`+
         `<span class="lv"><span class="live-dot"></span>ao vivo</span>`;
+      applyA11y($('status'));
     }
 
     function renderAll(){renderFilters();renderFeed();renderStatus();renderDetail();selSig=JSON.stringify(ORDERS.find(o=>o.id===selId)||null)}
@@ -902,7 +966,7 @@
       const card=t.closest('[data-sel]'); if(card){const cid=card.dataset.sel;if(isDesktop()&&cid===selId){deselectOrder();}else{selectOrder(cid);}return}
       if(t.closest('[data-back]')){document.body.classList.remove('viewing');return}
       const ph=t.closest('[data-photo]'); if(ph){$('lb').querySelector('img').src=ph.dataset.photo;$('lb').style.display='grid';return}
-      const cp=t.closest('[data-copy]'); if(cp){navigator.clipboard?.writeText(cp.dataset.copy);toast('Copiado: '+cp.dataset.copy,'ok');return}
+      const cp=t.closest('[data-copy]'); if(cp){copyText(cp.dataset.copy,'Copiado: '+cp.dataset.copy);return}
 
       const stt=t.closest('[data-status]'); if(stt){const[id,s]=stt.dataset.status.split('|');try{await api('update',{id,status:s});toast('Status: '+(FLOW_LBL[s]||s),'ok');await load()}catch(e){handleErr(e,'Falha')}return}
       const rc=t.closest('[data-rc]'); if(rc){const[id,k]=rc.dataset.rc.split('|');try{await api('recovery',{id,recovery_contact_status:k});if(k==='convertido')await api('update',{id,status:'fila_edicao'});toast(k==='convertido'?'Convertido → movido pra Produzir ✓':'Atualizado','ok');await load()}catch(e){handleErr(e,'Falha')}return}
@@ -910,13 +974,13 @@
       const fatt=t.closest('[data-fatt]'); if(fatt){ATT_FILTER=fatt.dataset.fatt;renderFeed();renderAttFilter();return}
       const wme=t.closest('[data-wme]'); if(wme){const v=wme.dataset.wme;const cur=localStorage.getItem('etz_hub_me')||'';localStorage.setItem('etz_hub_me',cur===v?'':v);applyMe();return}
       const grab=t.closest('[data-grab]'); if(grab){const me=localStorage.getItem('etz_hub_me')||'';if(!me){toast('Primeiro defina quem você é (toggle no topo)','err');return}const id=grab.dataset.grab;try{await api('assign',{id,attendant:me});const o=ORDERS.find(x=>x.id===id);if(o)o.attendant=me;toast('Pego para '+(me==='folha'?'🌿 Folha':'🔥 Davi'),'ok');await load()}catch(e){handleErr(e,'Falha')}return}
-      const sv=t.closest('[data-savevid]'); if(sv){const id=sv.dataset.savevid;const inp=document.querySelector(`input[data-vid="${id}"]`);try{await api('set_video',{id,video_url:inp?inp.value.trim():''});toast('Vídeo salvo ✓','ok');const o=ORDERS.find(x=>x.id===id);if(o)o.video_url=inp.value.trim();selSig='';renderDetail()}catch(e){handleErr(e,'Falha')}return}
-      const cm=t.closest('[data-copymsg]'); if(cm){const ta=document.querySelector(`textarea[data-msg="${cm.dataset.copymsg}"]`);if(ta){navigator.clipboard?.writeText(ta.value);toast('Mensagem copiada','ok')}return}
-      const ct=t.closest('[data-copytext]'); if(ct){navigator.clipboard?.writeText(ct.dataset.copytext);toast('Copiado ✓','ok');return}
+      const sv=t.closest('[data-savevid]'); if(sv){const id=sv.dataset.savevid;const inp=document.querySelector(`input[data-vid="${id}"]`);const vurl=inp?inp.value.trim():'';try{await api('set_video',{id,video_url:vurl});toast('Vídeo salvo ✓','ok');const o=ORDERS.find(x=>x.id===id);if(o)o.video_url=vurl;selSig='';renderDetail()}catch(e){handleErr(e,'Falha')}return}
+      const cm=t.closest('[data-copymsg]'); if(cm){const ta=document.querySelector(`textarea[data-msg="${cm.dataset.copymsg}"]`);if(ta){copyText(ta.value,'Mensagem copiada')}return}
+      const ct=t.closest('[data-copytext]'); if(ct){copyText(ct.dataset.copytext,'Copiado ✓');return}
       const dpf=t.closest('[data-dlphoto]'); if(dpf){const[u,n]=dpf.dataset.dlphoto.split('|');downloadPhoto(u,n);return}
       const cpf=t.closest('[data-cpphoto]'); if(cpf){copyPhoto(cpf.dataset.cpphoto);return}
-      const cbr=t.closest('[data-copybrief]'); if(cbr){const o=ORDERS.find(x=>x.id===cbr.dataset.copybrief);if(o){navigator.clipboard?.writeText(briefingText(o));toast('Briefing copiado ✓','ok')}return}
-      const cbu=t.closest('[data-copybuyer]'); if(cbu){const o=ORDERS.find(x=>x.id===cbu.dataset.copybuyer);if(o){navigator.clipboard?.writeText(buyerText(o));toast('Dados do comprador copiados ✓','ok')}return}
+      const cbr=t.closest('[data-copybrief]'); if(cbr){const o=ORDERS.find(x=>x.id===cbr.dataset.copybrief);if(o){copyText(briefingText(o),'Briefing copiado ✓')}return}
+      const cbu=t.closest('[data-copybuyer]'); if(cbu){const o=ORDERS.find(x=>x.id===cbu.dataset.copybuyer);if(o){copyText(buyerText(o),'Dados do comprador copiados ✓')}return}
 
       // ---- Galeria de fotos (Feature B) ----
       const gnav=t.closest('[data-galnav]'); if(gnav){const p=gnav.dataset.galnav.split('|'),id=p[0],dir=+p[1];const o=ORDERS.find(x=>x.id===id);if(o){const n=galleryList(o).length||1;GAL_IDX[id]=((GAL_IDX[id]||0)+dir+n)%n;selSig='';renderDetail()}return}
@@ -1253,6 +1317,7 @@
     window.addEventListener('appinstalled',()=>{$('btnInstall').style.display='none';toast('App instalado ✓','ok')});
     if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/hub/sw.js',{scope:'/hub/'}).catch(()=>{}))}
 
+    applyA11y(); // tag inicial dos controles estáticos (toggle "Eu sou", presets de data, períodos)
     if(token){showApp();applyMe();const _me0=localStorage.getItem('etz_hub_me')||'';if(_me0&&ATT_FILTER==='todos')ATT_FILTER=_me0;load();startAuto()}else{showLogin()}
   </script>
 </body>
