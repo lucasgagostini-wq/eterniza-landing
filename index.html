@@ -167,6 +167,13 @@
       color:var(--gold-soft);font-weight:700;display:grid;place-items:center;font-size:15px;
       font-family:'Playfair Display',serif;
     }
+    /* badges numerados (1·2·3): ouro sólido, dígito escuro — mais bonito e integrado */
+    .step .n.num{
+      background:linear-gradient(150deg,var(--gold-bright),var(--gold));
+      border-color:rgba(216,180,120,.5);
+      color:#231a0e;font-weight:800;font-size:16px;
+      box-shadow:0 6px 16px -7px rgba(216,180,120,.6),inset 0 1px 0 rgba(255,247,231,.4);
+    }
     .step h3{font-size:16px;color:var(--cream);margin-bottom:2px}
     .step p{font-size:14px;color:var(--muted)}
 
@@ -264,8 +271,6 @@
   </style>
 </head>
 <body>
-  <div class="scarcity">Vídeo + música personalizada · feito à mão · no seu WhatsApp em até 24h</div>
-
   <div class="wrap">
     <div class="hero">
       <h1>E se você pudesse rever, em movimento, quem deixou tanta saudade?</h1>
@@ -297,9 +302,9 @@
       <div class="kicker">Em 3 passos</div>
       <div class="section-title">Como funciona</div>
       <div class="steps">
-        <div class="step"><div class="n">1</div><div><h3>Responda 3 perguntas</h3><p>Conte um pouquinho sobre quem você quer homenagear.</p></div></div>
-        <div class="step"><div class="n">2</div><div><h3>Envie uma foto especial</h3><p>A foto mais bonita de quem deixou saudade.</p></div></div>
-        <div class="step"><div class="n">3</div><div><h3>Receba no seu WhatsApp</h3><p>Nossa equipe cria a homenagem à mão e entrega pra você.</p></div></div>
+        <div class="step"><div class="n num">1</div><div><h3>Responda 3 perguntas</h3><p>Conte um pouquinho sobre quem você quer homenagear.</p></div></div>
+        <div class="step"><div class="n num">2</div><div><h3>Envie uma foto especial</h3><p>A foto mais bonita de quem deixou saudade.</p></div></div>
+        <div class="step"><div class="n num">3</div><div><h3>Receba no seu WhatsApp</h3><p>Nossa equipe cria a homenagem à mão e entrega pra você.</p></div></div>
       </div>
     </section>
 
@@ -339,7 +344,7 @@
 
     <section>
       <div class="kicker">O método Toque Humano</div>
-      <div class="section-title">Não é um vídeo automático. É um artista cuidando do seu.</div>
+      <div class="section-title">Não é um vídeo automático. É um artista cuidando da sua homenagem</div>
       <div class="steps">
         <div class="step"><div class="n">🤍</div><div><h3>Um por um, nunca no automático</h3><p>Os apps de "foto com IA" entregam o mesmo vídeo genérico para todo mundo. Aqui é diferente: uma pessoa de verdade cuida da sua homenagem do início ao fim, ajustando e revisando cada detalhe até ficar à altura de quem você ama.</p></div></div>
       </div>

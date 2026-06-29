@@ -353,11 +353,6 @@
       </div>
       <div class="right">
         <span class="who" id="who"></span>
-        <div id="meToggle" style="display:flex;align-items:center;gap:4px;font-size:11px;color:#666;flex-shrink:0">
-          <span style="white-space:nowrap">Eu sou:</span>
-          <span id="meF" data-wme="folha" style="font-size:10.5px;padding:2px 7px;border-radius:7px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#8f8f8f;user-select:none;transition:color .15s,border-color .15s,background .15s">🌿 Folha</span>
-          <span id="meD" data-wme="davi" style="font-size:10.5px;padding:2px 7px;border-radius:7px;cursor:pointer;border:1px solid var(--line-hard);background:#161616;color:#8f8f8f;user-select:none;transition:color .15s,border-color .15s,background .15s">🔥 Davi</span>
-        </div>
         <button class="btn ghost sm" id="btnInstall" style="display:none">⬇ Instalar app</button>
         <button class="btn ghost sm" id="btnAnalytics">📊 Análise</button>
         <button class="btn ghost sm" id="btnLogout">Sair</button>
@@ -514,7 +509,7 @@
     // Filtros, pills e toggles são <span> com data-*; sem role/tabindex não recebem foco nem
     // respondem a Enter/Espaço. applyA11y() roda após cada render (idempotente); o keydown global
     // converte Enter/Espaço no controle focado em clique (o listener de click delegado trata o resto).
-    const A11Y_SEL='[data-f],[data-rc],[data-att],[data-wme],[data-fpreset],[data-preset],[data-fatt],[data-sel]';
+    const A11Y_SEL='[data-f],[data-rc],[data-att],[data-fpreset],[data-preset],[data-fatt],[data-sel]';
     function applyA11y(root){
       (root||document).querySelectorAll(A11Y_SEL).forEach(el=>{
         if(!el.hasAttribute('role')) el.setAttribute('role','button');
@@ -667,12 +662,6 @@
       const items=[['todos','Todos'],['folha','🌿 Folha'],['davi','🔥 Davi'],['none','○ Livre']];
       box.innerHTML=items.map(([k,l])=>`<span class="p ${ATT_FILTER===k?'on':''}" data-fatt="${k}">${l} <span style="font-size:10px;opacity:.65">${cnts[k]}</span></span>`).join('');
       applyA11y();
-    }
-    function applyMe(){
-      const me=localStorage.getItem('etz_hub_me')||'';
-      const mf=$('meF'),md=$('meD');
-      if(mf){if(me==='folha'){mf.style.color='#22c55e';mf.style.background='rgba(34,197,94,.14)';mf.style.borderColor='rgba(34,197,94,.4)'}else{mf.style.color='#8f8f8f';mf.style.background='#161616';mf.style.borderColor='var(--line-hard)'}}
-      if(md){if(me==='davi'){md.style.color='#f87171';md.style.background='rgba(248,113,113,.14)';md.style.borderColor='rgba(248,113,113,.4)'}else{md.style.color='#8f8f8f';md.style.background='#161616';md.style.borderColor='var(--line-hard)'}}
     }
     let SEARCH='', ATT_FILTER='todos';
     // casa por NÚMERO (dígitos, em phone_normalized/customer_phone) OU por NOME (comprador/homenageado)
@@ -972,8 +961,6 @@
       const rc=t.closest('[data-rc]'); if(rc){const[id,k]=rc.dataset.rc.split('|');try{await api('recovery',{id,recovery_contact_status:k});if(k==='convertido')await api('update',{id,status:'fila_edicao'});toast(k==='convertido'?'Convertido → movido pra Produzir ✓':'Atualizado','ok');await load()}catch(e){handleErr(e,'Falha')}return}
       const at=t.closest('[data-att]'); if(at){const[id,k]=at.dataset.att.split('|');try{await api('assign',{id,attendant:k});const o=ORDERS.find(x=>x.id===id);if(o)o.attendant=k||null;toast(k?('Atribuído a '+(k==='folha'?'🌿 Folha':'🔥 Davi')):'Liberado ○','ok');await load()}catch(e){handleErr(e,'Falha')}return}
       const fatt=t.closest('[data-fatt]'); if(fatt){ATT_FILTER=fatt.dataset.fatt;renderFeed();renderAttFilter();return}
-      const wme=t.closest('[data-wme]'); if(wme){const v=wme.dataset.wme;const cur=localStorage.getItem('etz_hub_me')||'';localStorage.setItem('etz_hub_me',cur===v?'':v);applyMe();return}
-      const grab=t.closest('[data-grab]'); if(grab){const me=localStorage.getItem('etz_hub_me')||'';if(!me){toast('Primeiro defina quem você é (toggle no topo)','err');return}const id=grab.dataset.grab;try{await api('assign',{id,attendant:me});const o=ORDERS.find(x=>x.id===id);if(o)o.attendant=me;toast('Pego para '+(me==='folha'?'🌿 Folha':'🔥 Davi'),'ok');await load()}catch(e){handleErr(e,'Falha')}return}
       const sv=t.closest('[data-savevid]'); if(sv){const id=sv.dataset.savevid;const inp=document.querySelector(`input[data-vid="${id}"]`);const vurl=inp?inp.value.trim():'';try{await api('set_video',{id,video_url:vurl});toast('Vídeo salvo ✓','ok');const o=ORDERS.find(x=>x.id===id);if(o)o.video_url=vurl;selSig='';renderDetail()}catch(e){handleErr(e,'Falha')}return}
       const cm=t.closest('[data-copymsg]'); if(cm){const ta=document.querySelector(`textarea[data-msg="${cm.dataset.copymsg}"]`);if(ta){copyText(ta.value,'Mensagem copiada')}return}
       const ct=t.closest('[data-copytext]'); if(ct){copyText(ct.dataset.copytext,'Copiado ✓');return}
@@ -1302,7 +1289,7 @@
       e.preventDefault();$('loginErro').textContent='';
       const v=$('senha').value.trim();if(!v){$('loginErro').textContent='Digite a senha.';return}
       token=v;
-      try{await api('list');sessionStorage.setItem(TKEY,token);$('senha').value='';showApp();applyMe();const _me=localStorage.getItem('etz_hub_me')||'';if(_me&&ATT_FILTER==='todos')ATT_FILTER=_me;await load();startAuto()}
+      try{await api('list');sessionStorage.setItem(TKEY,token);$('senha').value='';showApp();await load();startAuto()}
       catch(e){
         token='';
         if(e&&e.code===429){lockLogin(e.retryAfter)}
@@ -1317,8 +1304,8 @@
     window.addEventListener('appinstalled',()=>{$('btnInstall').style.display='none';toast('App instalado ✓','ok')});
     if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/hub/sw.js',{scope:'/hub/'}).catch(()=>{}))}
 
-    applyA11y(); // tag inicial dos controles estáticos (toggle "Eu sou", presets de data, períodos)
-    if(token){showApp();applyMe();const _me0=localStorage.getItem('etz_hub_me')||'';if(_me0&&ATT_FILTER==='todos')ATT_FILTER=_me0;load();startAuto()}else{showLogin()}
+    applyA11y(); // tag inicial dos controles estáticos (presets de data, períodos)
+    if(token){showApp();load();startAuto()}else{showLogin()}
   </script>
 </body>
 </html>
