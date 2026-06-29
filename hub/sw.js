@@ -1,7 +1,7 @@
 // Service worker do Delivery Hub — Eterniza (escopo /hub/).
 // Network-first nos estáticos (sempre pega a versão nova), nunca toca em /api.
-const CACHE = 'eterniza-hub-v2';
-const ASSETS = ['/hub/', '/hub/index.html', '/hub/manifest.json', '/hub/icon-192.png', '/hub/icon-512.png'];
+const CACHE = 'eterniza-hub-v3';
+const ASSETS = ['/hub/', '/hub/index.html', '/hub/hub.css', '/hub/hub.js', '/hub/manifest.json', '/hub/icon-192.png', '/hub/icon-512.png'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
