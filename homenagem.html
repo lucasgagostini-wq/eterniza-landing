@@ -569,11 +569,13 @@
   // Limite diário de prévias por IP atingido -> aviso + botão de contato (mesmo número do suporte).
   function showQuotaLimit(){
     clearLoad();
+    var card=document.querySelector('.loadcard');
+    if(card){ ['.loadphoto','.bar','.loadtrust','.loadnote'].forEach(function(s){ var el=card.querySelector(s); if(el) el.style.display='none'; }); var h=card.querySelector('.loadheart'); if(h) h.textContent='⏳'; }
     document.getElementById('loadTitle').textContent='Suas prévias diárias acabaram';
     var msg='Olá! Tentei gerar minha prévia da homenagem mas atingi o limite diário. Podem me ajudar? 🙏';
     document.getElementById('checks').innerHTML=
-      '<li class="on" style="justify-content:center;text-align:center;color:var(--gold-d);line-height:1.5">Você já gerou suas prévias de hoje. Aguarde 24 horas para tentar novamente — ou fale com a gente agora:</li>'+
-      '<li style="justify-content:center;margin-top:14px"><a class="btn btn-green" href="https://wa.me/5519990097606?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" style="text-decoration:none">💬 Falar no WhatsApp</a></li>';
+      '<li class="on" style="display:block;text-align:center;color:var(--gold-d);line-height:1.55">Você já gerou suas prévias de hoje. Aguarde 24 horas para tentar novamente — ou fale com a gente agora:</li>'+
+      '<li class="on" style="margin-top:16px"><a class="btn btn-green" href="https://wa.me/5519990097606?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener" style="text-decoration:none">💬 Falar no WhatsApp</a></li>';
   }
 
   function checkout(){
