@@ -462,6 +462,8 @@
     const money = v=>v==null?null:'R$ '+Number(v).toFixed(2).replace('.',',');
     const waLink=(phone,text)=>`https://wa.me/${(phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(text)}`;
     const firstName = n => (n||'').trim().split(/\s+/)[0]||'';
+    // 2º WhatsApp (número alternativo) — guardado em recovery_notes como "tel2:<norm>"
+    const phone2 = o => { const m=String((o&&o.recovery_notes)||'').match(/tel2:(\d{12,13})/); return m?m[1]:''; };
     function chip(status){const t=TAG[status]||{l:status,c:'#9ca3af,#444,rgba(255,255,255,.06)'};const[fg,,bgc]=t.c.split(',');const bg=t.c.split(',').slice(2).join(',');return `<span class="chip" style="color:${fg};background:${bg};border:1px solid ${fg}33">${esc(t.l)}</span>`;}
     function toast(m,kind){const t=$('toast');t.textContent=m;t.className='show'+(kind?' '+kind:'');clearTimeout(toast._t);toast._t=setTimeout(()=>t.className='',2400)}
 
@@ -706,6 +708,7 @@
       // contato/pagamento — só campos presentes (lead não tem e-mail/valor; pago mostra o valor real, já com order bump)
       const cf=[];
       if(phone) cf.push(`<div><div class="k">WhatsApp</div><div class="v cp mono" data-copy="${esc(o.customer_phone||phone)}">${esc(o.customer_phone||phone)}</div></div>`);
+      { const p2=phone2(o); if(p2){ const m2=['pago','fila_edicao'].includes(o.status)?confirmMsg(o):(o.status==='pronta'||o.status==='entregue')?deliverMsg(o):RECUPERAR.includes(o.status)?recoveryMsg(o):''; cf.push(`<div><div class="k">2º WhatsApp <span style="color:#fcd34d" title="número alternativo — um dos dois pode estar errado">⚠</span></div><div class="v" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="cp mono" data-copy="${esc(p2)}">${esc(p2)}</span><a class="wpp" style="padding:2px 10px;font-size:12px" href="${waLink(p2,m2)}" target="_blank" rel="noopener">📲 Chamar</a></div></div>`); } }
       if(o.customer_email) cf.push(`<div><div class="k">E-mail</div><div class="v cp" data-copy="${esc(o.customer_email)}">${esc(o.customer_email)}</div></div>`);
       if(o.valor!=null) cf.push(`<div><div class="k">Valor pago</div><div class="v">${esc(money(o.valor))}</div></div>`);
       if(o.pix_generated_at) cf.push(`<div><div class="k">Pix gerado</div><div class="v mono">${esc(fmt(o.pix_generated_at))}</div></div>`);
@@ -798,6 +801,7 @@
         <div class="editgrid">
           <label><span class="ov">Comprador</span><input id="e_cn" value="${F('',o.customer_name)}"></label>
           <label><span class="ov">WhatsApp</span><input id="e_ph" value="${F('',o.customer_phone||o.phone_normalized)}"></label>
+          <label><span class="ov">2º WhatsApp (alt)</span><input id="e_p2" value="${F('',phone2(o))}" placeholder="número alternativo"></label>
           <label><span class="ov">E-mail</span><input id="e_em" value="${F('',o.customer_email)}"></label>
           <label><span class="ov">Valor (R$)</span><input id="e_vl" inputmode="decimal" value="${o.valor==null?'':o.valor}"></label>
           <label><span class="ov">Homenageado(a)</span><input id="e_rn" value="${F('',o.recipient_name)}"></label>
@@ -951,7 +955,7 @@
       const body={
         customer_name:g('e_cn'),customer_phone:g('e_ph'),customer_email:g('e_em'),
         valor:g('e_vl'),recipient_name:g('e_rn'),relationship:g('e_rel'),
-        status:g('e_st'),photo_url:g('e_ph2'),memory:g('e_mem'),video_url:g('e_vid'),
+        status:g('e_st'),photo_url:g('e_ph2'),memory:g('e_mem'),video_url:g('e_vid'),phone2:g('e_p2'),
       };
       try{await api('edit',{id},{method:'POST',body});toast('Pedido atualizado ✓','ok');editing=false;await load()}
       catch(e){handleErr(e,'Falha ao salvar')}

@@ -456,6 +456,8 @@ module.exports = async (req, res) => {
         if (k in b) { let v = b[k]; if (typeof v === 'string') { v = v.trim(); if (v === '') v = null; } patch[k] = v; }
       }
       if ('valor' in b) { const n = Number(String(b.valor).replace(',', '.')); patch.valor = (b.valor === '' || b.valor == null || isNaN(n)) ? null : n; }
+      // 2º WhatsApp (casos de número errado/duplicado): guardado em recovery_notes como "tel2:<norm>" (campo livre, não usado p/ outra coisa)
+      if ('phone2' in b) { const d = String(b.phone2 || '').replace(/\D/g, ''); patch.recovery_notes = d ? ('tel2:' + normalizePhone(d)) : null; }
       if ('status' in b && b.status) {
         if (!STATUSES.includes(b.status)) return res.status(400).json({ error: 'bad_status' });
         patch.status = b.status;
