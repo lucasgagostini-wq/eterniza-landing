@@ -320,9 +320,9 @@
       <div class="stk"><div class="si"><span class="se">🛡️</span><div><b>Garantia de emoção (7 dias)</b><span>não emocionou, devolvemos 100%</span></div></div><div class="sv">incluso</div></div>
       <div class="stktotal">Valor total <s>R$257</s> · hoje por apenas</div>
       <div class="price">
-        <div class="now"><small>R$</small>49<small>,90</small></div>
+        <div class="now"><small>R$</small>37</div>
         <div class="small muted">pagamento único e 100% seguro</div>
-        <div class="saveb">você economiza R$207 hoje</div>
+        <div class="saveb">você economiza R$220 hoje</div>
       </div>
       <button class="btn btn-green pulse-green" onclick="checkout()">Finalizar minha homenagem</button>
       <p class="center small muted" style="margin:10px 0 0">Pague no Pix ou cartão — sem cadastro longo.</p>
@@ -586,7 +586,7 @@
 
   function checkout(){
     track('h_checkout');
-    px('InitiateCheckout',{value:49.90,currency:'BRL',content_name:'Eterniza'});
+    px('InitiateCheckout',{value:37.00,currency:'BRL',content_name:'Eterniza'});
     var qs='?nome='+encodeURIComponent(state.nome||'')+(state.whatsapp?'&phone='+encodeURIComponent(state.whatsapp):'');
     var up=new URLSearchParams(location.search);
     ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid'].forEach(function(k){var v=up.get(k);if(v)qs+='&'+k+'='+encodeURIComponent(v);});
