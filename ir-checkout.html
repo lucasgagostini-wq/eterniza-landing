@@ -36,8 +36,11 @@
       // --- escolha do gateway ---
       var GATEWAY, abSid = null;
       var forced = (q.get('gw') || '').toLowerCase();
+      var pref = (q.get('pref') || '').toLowerCase(); // gateway do FLUXO: força E conta a atribuição
       if (forced === 'cakto' || forced === 'yampi') {
         GATEWAY = forced; // QA: força e não conta
+      } else if (pref === 'cakto' || pref === 'yampi') {
+        GATEWAY = pref; // ex.: a /homenagem manda pref=cakto; o bot (sem pref) segue no SPLIT_YAMPI
       } else if (SPLIT_YAMPI >= 1) {
         GATEWAY = 'yampi'; // 100% Yampi — ignora sorteio/persistência (até quem tava salvo em Cakto vai pra Yampi)
       } else if (SPLIT_YAMPI <= 0) {
@@ -81,6 +84,9 @@
         if (phone) parts.push('phone=' + encodeURIComponent(phone));
         if (originSid) parts.push('sid=' + encodeURIComponent(originSid));
         if (quizVariant) parts.push('ab_quiz=' + encodeURIComponent(quizVariant));
+        // fbclid -> o Pixel da Meta na página da Cakto reconstrói o _fbc e atribui a venda ao anúncio
+        var fbclid = (q.get('fbclid') || '').trim();
+        if (fbclid) parts.push('fbclid=' + encodeURIComponent(fbclid));
       }
       ['utm_source', 'utm_campaign', 'utm_medium', 'utm_content', 'utm_term'].forEach(function (k) {
         var v = q.get(k); if (v) parts.push(k + '=' + encodeURIComponent(v));

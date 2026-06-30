@@ -591,6 +591,7 @@
     var up=new URLSearchParams(location.search);
     ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid'].forEach(function(k){var v=up.get(k);if(v)qs+='&'+k+'='+encodeURIComponent(v);});
     if(SID)qs+='&sid='+encodeURIComponent(SID);
+    qs+='&pref=cakto'; // fluxo de prévia /homenagem -> checkout Cakto (o bot segue no Yampi)
     location.href=CHECKOUT+qs;
   }
 
