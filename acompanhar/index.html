@@ -185,7 +185,7 @@
       { key:'entregue',    label:'Entregue no WhatsApp' },
     ];
     const PAGOS = ['pago','fila_edicao','produzindo','pronta','entregue'];
-    const WPP_NUM = '5519990097606'; // contato Eterniza
+    const WPP_NUM = '5541992386350'; // contato Eterniza
     const fmtData = (iso) => { try { return new Date(iso).toLocaleDateString('pt-BR'); } catch(e){ return ''; } };
     const esc = (s) => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const waContato = (nome) => 'https://wa.me/' + WPP_NUM + '?text=' + encodeURIComponent('Olá! 💛 Tenho uma dúvida sobre a homenagem' + (nome ? ' de ' + nome : '') + ' (Eterniza).');
