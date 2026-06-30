@@ -3,9 +3,12 @@
     "api/preview.js": { "maxDuration": 60 }
   },
   "redirects": [
-    { "source": "/homenagem.html", "destination": "/homenagem", "permanent": false }
+    { "source": "/homenagem.html", "destination": "/homenagem", "permanent": false },
+    { "source": "/encontro", "destination": "/encontro/", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/homenagem", "destination": "/homenagem.html" }
+    { "source": "/homenagem", "destination": "/homenagem.html" },
+    { "source": "/encontro/", "destination": "https://eterniza-funnel.vercel.app/" },
+    { "source": "/encontro/:path*", "destination": "https://eterniza-funnel.vercel.app/:path*" }
   ]
 }
