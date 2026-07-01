@@ -114,7 +114,7 @@ const hashEmail = (e) => { e = e ? String(e).trim().toLowerCase() : ''; return e
 const hashPhone = (p) => { const d = String(p || '').replace(/\D/g, ''); return d ? sha256(d) : undefined; };
 
 async function sendMetaPurchase({ value, currency = 'BRL', email, phone, fbp, fbc, eventId, eventSourceUrl, eventTime }) {
-  const PIXEL = (process.env.META_PIXEL_ID || '1174240384548110').trim(); // pixel 110 (Eterniza)
+  const PIXEL = (process.env.META_PIXEL_ID || '1560779522230953').trim(); // pixel novo Eterniza (trocado 01/07 apos hijack do 110)
   const TOKEN = (process.env.META_CAPI_TOKEN || '').trim();
   if (!TOKEN) return { skipped: 'no_token' }; // Lucas precisa setar META_CAPI_TOKEN no Vercel
 
