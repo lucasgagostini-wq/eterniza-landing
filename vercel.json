@@ -8,6 +8,8 @@
   ],
   "rewrites": [
     { "source": "/homenagem", "destination": "/homenagem.html" },
+    { "source": "/privacidade", "destination": "/privacidade.html" },
+    { "source": "/termos", "destination": "/termos.html" },
     { "source": "/encontro/", "destination": "https://eterniza-funnel.vercel.app/" },
     { "source": "/encontro/:path*", "destination": "https://eterniza-funnel.vercel.app/:path*" }
   ]
