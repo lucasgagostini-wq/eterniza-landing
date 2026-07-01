@@ -68,9 +68,35 @@ const notifyWaFalhou = (p) => send({
   ],
 }, { mention: true });
 
+// 🚨 WEBHOOK DE PAGAMENTO REJEITADO — token não bate (secret rotacionado sem atualizar no
+// painel do gateway, ou config errada). Se isso disparar, TODA venda pode estar caindo fora
+// do Hub sem registro algum — é o alerta mais crítico do sistema.
+const notifyWebhookFalhou = (p) => send({
+  title: '🚨 Webhook de pagamento REJEITADO — vendas podem não estar caindo no Hub',
+  color: 0xff3b30,
+  fields: [
+    { inline: true, name: 'Gateway', value: p.gateway || '—' },
+    { inline: false, name: 'Motivo', value: String(p.motivo || '—').slice(0, 200) },
+    { inline: false, name: 'Data', value: nowSP() },
+  ],
+}, { mention: true });
+
+// ⚠️ FOTO DO CLIENTE NÃO SALVOU — a prévia/pedido seguiu, mas a foto original pode ter
+// se perdido; time precisa pedir a foto de novo pro cliente antes de produzir o vídeo.
+const notifyFotoFalhou = (p) => send({
+  title: '⚠️ Foto do cliente falhou ao salvar',
+  color: 0xffcc00,
+  fields: [
+    { inline: false, name: 'Etapa', value: p.etapa || '—' },
+    { inline: false, name: 'Nome (homenageado)', value: p.nome || '—' },
+    { inline: false, name: 'Motivo', value: String(p.motivo || '—').slice(0, 200) },
+    { inline: false, name: 'Data', value: nowSP() },
+  ],
+}, { mention: true });
+
 // teste de integração (admin)
 async function sendTest() {
   return send({ title: '🚀 TESTE — Eterniza', color: 0x00c06e, fields: [{ name: 'Status', value: '✅ Webhook Discord da Eterniza funcionando!' }, { name: 'Data', value: nowSP() }] }, { mention: true });
 }
 
-module.exports = { notifyVendaAprovada, notifyPixGerado, notifyWaFalhou, sendTest, MENTION_IDS };
+module.exports = { notifyVendaAprovada, notifyPixGerado, notifyWaFalhou, notifyFotoFalhou, notifyWebhookFalhou, sendTest, MENTION_IDS };

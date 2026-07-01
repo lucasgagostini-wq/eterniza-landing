@@ -2,6 +2,7 @@
 // hospeda no Supabase Storage e devolve a URL pública. Chamado pelo bot logo após a foto.
 // Auth por ?token= (= PREVIEW_TOKEN | CAKTO_SECRET) p/ não deixar qualquer um gastar a API.
 const { SB, KEY, clientIp, sbSelect, sbInsert } = require('./_lib');
+const discord = require('./_discord');
 let sharp = null; try { sharp = require('sharp'); } catch (e) { /* sem sharp: sobe imagem limpa */ }
 
 // Provedor de imagem: usa OpenRouter se a chave existir (pré-pago avulso, sem mínimo de R$200 do Google),
@@ -147,17 +148,25 @@ async function ensureBucket() {
   }).catch(() => {});
 }
 
-async function uploadToStorage(base64, mime) {
+// upload com retry (2 tentativas extras em falha transiente) — antes uma falha de rede/timeout
+// isolada perdia a foto do cliente sem chance de recuperação.
+async function uploadToStorage(base64, mime, attempt) {
+  attempt = attempt || 0;
   const ext = (mime.split('/')[1] || 'png').replace('jpeg', 'jpg').replace('+xml', '');
   const path = `previa-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const bytes = Buffer.from(base64, 'base64');
   const put = () => fetch(`${SB}/storage/v1/object/${BUCKET}/${path}`, {
     method: 'POST', headers: SBH({ 'Content-Type': mime, 'x-upsert': 'true' }), body: bytes,
   });
-  let up = await put();
-  if (up.status === 404 || up.status === 400) { await ensureBucket(); up = await put(); }
-  if (!up.ok) throw new Error('storage_' + up.status + ':' + (await up.text()).slice(0, 180));
-  return `${SB}/storage/v1/object/public/${BUCKET}/${path}`;
+  try {
+    let up = await put();
+    if (up.status === 404 || up.status === 400) { await ensureBucket(); up = await put(); }
+    if (!up.ok) throw new Error('storage_' + up.status + ':' + (await up.text()).slice(0, 180));
+    return `${SB}/storage/v1/object/public/${BUCKET}/${path}`;
+  } catch (e) {
+    if (attempt < 2) return uploadToStorage(base64, mime, attempt + 1);
+    throw e;
+  }
 }
 
 // Carimba "PRÉVIA ETERNIZA" DENTRO da imagem (igual o RevivaPic) compondo um PNG pré-renderizado
@@ -239,9 +248,17 @@ module.exports = async (req, res) => {
     } else {
       src = await fetchAsBase64(photoUrl);
     }
-    // sobe original antes da IA (time de produção usa essa foto, não a prévia com watermark)
+    // sobe original antes da IA (time de produção usa essa foto pra editar, não a prévia com
+    // watermark). Já tem retry embutido no uploadToStorage; se AINDA assim falhar (todas as
+    // tentativas), alerta o time no Discord na hora — antes esse erro só ia pro console.log,
+    // ninguém via, e o pedido seguia sem a foto original em silêncio.
     let origUrl = null;
-    try { origUrl = await uploadToStorage(src.base64, src.mime); } catch (e) { console.log('[preview] orig upload falhou:', String(e && e.message || e).slice(0, 100)); }
+    try { origUrl = await uploadToStorage(src.base64, src.mime); }
+    catch (e) {
+      const msg = String(e && e.message || e).slice(0, 150);
+      console.log('[preview] orig upload falhou (todas as tentativas):', msg);
+      discord.notifyFotoFalhou({ etapa: 'preview_original', motivo: msg, nome: body.nome }).catch(() => {});
+    }
     const prompt = buildPrompt(body);
     const gen = provider === 'openrouter' ? await callOpenRouter(src.base64, src.mime, prompt) : await callGemini(src.base64, src.mime, prompt);
     const noWm = q.nowm === '1' || q.nowm === 'true' || body.nowm === true || body.nowm === 1;

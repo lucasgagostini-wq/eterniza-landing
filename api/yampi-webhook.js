@@ -30,6 +30,17 @@ function parseValor(v) {
   return isNaN(n) ? undefined : n;
 }
 
+// Anti-spam simples (mesmo espírito do anti-bruteforce do hub.js): no máx 1 alerta de token
+// rejeitado a cada 5 min — evita floodar o Discord se algo bater nesse endpoint repetidamente.
+// É o alerta MAIS crítico do sistema: token errado aqui = TODA venda passa batido, sem cair no Hub.
+let lastAuthAlert = 0;
+async function alertAuthFailOnce(reason) {
+  const now = Date.now();
+  if (now - lastAuthAlert < 5 * 60 * 1000) return;
+  lastAuthAlert = now;
+  try { await discord.notifyWebhookFalhou({ gateway: 'Yampi', motivo: reason }); } catch (e) {}
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
   const TOKEN = (process.env.YAMPI_TOKEN || process.env.CAKTO_SECRET || '').trim();
@@ -39,7 +50,10 @@ module.exports = async (req, res) => {
   body = body || {};
 
   const sent = (req.query.token || body.token || req.headers['x-yampi-token'] || '').toString().trim();
-  if (!TOKEN || sent !== TOKEN) return res.status(401).json({ error: 'unauthorized' });
+  if (!TOKEN || sent !== TOKEN) {
+    alertAuthFailOnce(!TOKEN ? 'YAMPI_TOKEN/CAKTO_SECRET nao configurado na Vercel' : 'token recebido nao bate com o configurado (secret rotacionado?)').catch(() => {});
+    return res.status(401).json({ error: 'unauthorized' });
+  }
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) return res.status(500).json({ error: 'env_missing' });
 
   // Yampi aninha o pedido em resource/data; e o customer pode vir em customer.data. Defensivo.
