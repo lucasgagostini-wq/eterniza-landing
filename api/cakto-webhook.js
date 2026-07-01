@@ -3,6 +3,9 @@
 const { normalizePhone, pick, firstOf, detectCaktoStatus, upsertOrder } = require('./_lib');
 
 module.exports = async (req, res) => {
+  // DESATIVADO (07/2026): checkout é 100% Yampi. Endpoint sem uso + secret fraco = superfície de
+  // ataque (venda/pixel falso). Retorna 410 até reativar com CAKTO_ENABLED=1 e um secret FORTE.
+  if ((process.env.CAKTO_ENABLED || '') !== '1') return res.status(410).json({ error: 'gone' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
   const SECRET = (process.env.CAKTO_SECRET || '').trim();
   if (!SECRET || (req.query.secret || '').toString().trim() !== SECRET) return res.status(401).json({ error: 'unauthorized' });

@@ -27,6 +27,9 @@ function parseValor(v) {
 }
 
 module.exports = async (req, res) => {
+  // DESATIVADO (07/2026): nunca usado em produção. Superfície de ataque = fechada.
+  // Reativar só com KIRVANO_ENABLED=1 e um secret FORTE.
+  if ((process.env.KIRVANO_ENABLED || '') !== '1') return res.status(410).json({ error: 'gone' });
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
   const TOKEN = (process.env.KIRVANO_TOKEN || process.env.CAKTO_SECRET || '').trim();
 
