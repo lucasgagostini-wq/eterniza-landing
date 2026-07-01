@@ -281,7 +281,34 @@
       </div>
       <a class="cta" href="https://app.chatecom.me/eternizam">Fazer minha homenagem agora</a>
       <div class="cta-note">Atendimento humano no WhatsApp · Garantia de 7 dias</div>
-      <div class="trust"><span class="star">★</span> <b>4.9</b> · +4.203 famílias avaliaram · emoção garantida</div>
+      <div class="trust"><span class="star">★</span> <b>4.9</b> · +<span id="rateCount">4.203</span> famílias avaliaram · emoção garantida</div>
+      <script>
+      /* Contador "vivo" de avaliações — ancorado no tempo real: sobe devagar, nunca cai no F5 */
+      (function () {
+        var el = document.getElementById('rateCount'); if (!el) return;
+        var START  = 4203;                        // número base
+        var EPOCH  = Date.UTC(2026, 6, 1, 0, 0);  // âncora no tempo (jul/2026)
+        var PERIOD = 90000;                       // ← RITMO: 1 avaliação a cada 90s (menor = sobe mais rápido)
+        var KEY = 'etz_rate_seen';
+        var fmt = function (n) { return n.toLocaleString('pt-BR'); };
+        var timeBase = function () { return START + Math.floor((Date.now() - EPOCH) / PERIOD); };
+        var stored = parseInt(localStorage.getItem(KEY) || '0', 10) || 0;
+        var shown = Math.max(timeBase(), stored);       // monotônico: nunca diminui
+        el.textContent = fmt(shown);
+        (function loop() {
+          setTimeout(function () {
+            var v = Math.max(timeBase(), shown);
+            if (v > shown) {
+              shown = v; el.textContent = fmt(shown);
+              try { localStorage.setItem(KEY, String(shown)); } catch (e) {}
+              el.style.transition = 'none'; el.style.opacity = '.5';
+              requestAnimationFrame(function () { el.style.transition = 'opacity .6s ease'; el.style.opacity = '1'; });
+            }
+            loop();
+          }, 3500 + Math.random() * 4000);            // checa a cada ~3,5–7,5s (variação = orgânico)
+        })();
+      })();
+      </script>
     </div>
 
     <div class="divider"><span class="ln"></span><span class="dot">✦</span><span class="ln r"></span></div>
