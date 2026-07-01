@@ -377,6 +377,9 @@
   var SID=(function(){var k='etz_sid_h',incoming=(QS.get('sid')||'').trim().slice(0,80),id=incoming||sessionStorage.getItem(k);if(!id){id='h-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);}try{sessionStorage.setItem(k,id);if(incoming)sessionStorage.setItem('etz_sid',id);}catch(e){}return id;})();
   function track(step){try{fetch('/api/track?sid='+encodeURIComponent(SID)+'&step='+encodeURIComponent(step),{method:'GET'});}catch(e){}}
   function px(ev,params){try{if(window.fbq)fbq('trackCustom',ev,params||{});}catch(e){}}
+  // eventos PADRÃO da Meta (Lead, InitiateCheckout, etc.) TÊM que ir por 'track' — com 'trackCustom'
+  // viram evento personalizado de mesmo nome e NÃO contam nas colunas/otimização da campanha.
+  function pxT(ev,params){try{if(window.fbq)fbq('track',ev,params||{});}catch(e){}}
   function lead(fields){try{fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({},fields,{source:'homenagem',sid:SID}))});}catch(e){}}
 
   var API = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'https://eternizamemori.site/api/preview' : '/api/preview';
@@ -494,7 +497,7 @@
     if(ddd<11||distintos<3){ err.textContent='Esse número não parece válido. Confira e tente de novo. 🙏'; el.focus(); return; }
     err.textContent=''; state.whatsapp=v;
     state.nomeComprador=nome;
-    track('h_whatsapp'); px('Lead',{content_category:'homenagem'});
+    track('h_whatsapp'); pxT('Lead',{content_category:'homenagem'});
     go(5);
   }
 
@@ -584,7 +587,7 @@
 
   function checkout(){
     track('h_checkout');
-    px('InitiateCheckout',{value:37.00,currency:'BRL',content_name:'Eterniza'});
+    pxT('InitiateCheckout',{value:37.00,currency:'BRL',content_name:'Eterniza'});
     var qs='?nome='+encodeURIComponent(state.nome||'')+(state.whatsapp?'&phone='+encodeURIComponent(state.whatsapp):'');
     var up=new URLSearchParams(location.search);
     ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid'].forEach(function(k){var v=up.get(k);if(v)qs+='&'+k+'='+encodeURIComponent(v);});
