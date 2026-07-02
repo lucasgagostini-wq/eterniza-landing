@@ -634,7 +634,8 @@
     let FUNNEL_MODE='bot', lastAnaData=null, lastQuizAbData=null, lastCheckoutAbData=null;
     function setFunnelMode(mode){
       FUNNEL_MODE=mode; anaBuilt=false;
-      document.querySelectorAll('.ana-tab').forEach(b=>b.classList.toggle('on',b.id===(mode==='bot'?'tabBot':'tabH')));
+      var TABID={bot:'tabBot',homenagem:'tabH',encontro:'tabF',pet:'tabPet'};
+      document.querySelectorAll('.ana-tab').forEach(b=>b.classList.toggle('on',b.id===TABID[mode]));
       if(lastAnaData) paintFunnel(lastAnaData);
     }
     const SHORT={pagina_venda:'Página',cta_clicou:'Clicou CTA',g1_abertura:'Abertura',g2_porquem:'Por quem',g3_nome:'Nome',g4_memoria:'Memória',g5_desejo:'Desejo',g6_video:'Vídeo',g7_foto:'Foto',g8_whatsapp:'WhatsApp',h_hero:'Pág. H',h_quiz:'CTA hero',h_nome:'Q1 quem',h_memoria:'Q2 nome',h_whatsapp:'WhatsApp',h_foto:'Foto',h_previa:'Prévia',h_checkout:'Finalizar'};
@@ -727,7 +728,8 @@
 
     function paintFunnel(d){
       lastAnaData=d;
-      const f=(d&&(FUNNEL_MODE==='homenagem'?d.funnelH:d.funnel))||[];
+      var FKEY={bot:'funnel',homenagem:'funnelH',encontro:'funnelF',pet:'funnelFpet'};
+      const f=(d&&d[FKEY[FUNNEL_MODE]||'funnel'])||[];
       if(!anaBuilt){ if(!f.length){$('funnelView').innerHTML='<div class="ana-loading">Sem dados ainda para este funil.</div>';return} buildFunnelSkeleton(f); }
       const chart=$('fchart'); if(!chart)return;
       const top=Math.max(1,(f[0]&&f[0].count)||0);

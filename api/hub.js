@@ -166,8 +166,13 @@ module.exports = async (req, res) => {
       const H_LBL = { h_hero: 'Página /homenagem', h_quiz: 'Clicou CTA hero', h_nome: 'Passou Q1 (pra quem)', h_memoria: 'Passou Q2 (nome)', h_whatsapp: 'Deixou WhatsApp', h_foto: 'Enviou foto', h_previa: 'Prévia gerada', h_checkout: 'Clicou finalizar' };
       const HOMENAGEM = ['h_hero', 'h_quiz', 'h_nome', 'h_memoria', 'h_whatsapp', 'h_foto', 'h_previa', 'h_checkout'];
       const funnelH = HOMENAGEM.map(s => ({ step: s, label: H_LBL[s], count: ev(s) }));
+      // FUNIL NOVO /encontro (upload → animação → roleta → checkout PIX). Variante pet grava pet_*.
+      const F_LBL = { f1_landing: 'Entrou', f2_foto_enviada: 'Enviou a foto', f3_loading: 'Viu a animação', f4_girou: 'Girou a roleta', f5_email: 'Deixou contato', f6_checkout: 'Chegou no checkout', f6_provas: 'Rolou até as provas', f_pix_gerado: 'PIX gerado', f_pix_copiado: 'Copiou o PIX' };
+      const F_STEPS = ['f1_landing', 'f2_foto_enviada', 'f3_loading', 'f4_girou', 'f5_email', 'f6_checkout', 'f6_provas', 'f_pix_gerado', 'f_pix_copiado'];
+      const funnelF = F_STEPS.map(s => ({ step: s, label: F_LBL[s], count: ev(s) }));
+      const funnelFpet = F_STEPS.map(s => ({ step: 'pet_' + s, label: F_LBL[s], count: ev('pet_' + s) }));
       // VENDAS = bloco separado (orders); base diferente (não entra no % do funil de sessões)
-      return res.status(200).json({ funnel, funnelH, sales: { oferta, pago, recuperacao }, period, from: from || null, to: to || null, trackingSince, botTracking: BOT.some(b => ev(b) > 0) });
+      return res.status(200).json({ funnel, funnelH, funnelF, funnelFpet, sales: { oferta, pago, recuperacao }, period, from: from || null, to: to || null, trackingSince, botTracking: BOT.some(b => ev(b) > 0) });
     }
     // A/B Cakto x Yampi: atribuição (go_cakto/go_yampi) + vendas/faturamento por gateway (etiqueta cakto_payload._gateway)
     if (action === 'ab') {
