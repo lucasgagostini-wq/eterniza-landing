@@ -94,9 +94,21 @@ const notifyFotoFalhou = (p) => send({
   ],
 }, { mention: true });
 
+// 🚨 CAPI FALHOU — a venda caiu no Hub mas o Purchase NÃO foi pro Meta (token inválido/ausente).
+// Campanha pode metrificar 0 conversão mesmo vendendo — foi o que passou despercebido ~10h em 01/07.
+const notifyCapiFalhou = (p) => send({
+  title: '🚨 CAPI falhou — Purchase NÃO chegou no Meta (conversão pode zerar)',
+  color: 0xff3b30,
+  fields: [
+    { inline: true, name: 'Gateway', value: p.gateway || '—' },
+    { inline: false, name: 'Motivo', value: String(p.motivo || '—').slice(0, 300) },
+    { inline: false, name: 'Data', value: nowSP() },
+  ],
+}, { mention: true });
+
 // teste de integração (admin)
 async function sendTest() {
   return send({ title: '🚀 TESTE — Eterniza', color: 0x00c06e, fields: [{ name: 'Status', value: '✅ Webhook Discord da Eterniza funcionando!' }, { name: 'Data', value: nowSP() }] }, { mention: true });
 }
 
-module.exports = { notifyVendaAprovada, notifyPixGerado, notifyWaFalhou, notifyFotoFalhou, notifyWebhookFalhou, sendTest, MENTION_IDS };
+module.exports = { notifyVendaAprovada, notifyPixGerado, notifyWaFalhou, notifyFotoFalhou, notifyWebhookFalhou, notifyCapiFalhou, sendTest, MENTION_IDS };

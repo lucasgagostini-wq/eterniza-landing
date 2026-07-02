@@ -41,6 +41,19 @@ async function alertAuthFailOnce(reason) {
   try { await discord.notifyWebhookFalhou({ gateway: 'Yampi', motivo: reason }); } catch (e) {}
 }
 
+// anti-spam do alerta de CAPI falho (venda caiu no Hub mas Purchase não foi pro Meta)
+let lastCapiAlert = 0;
+function alertCapiFailOnce(capi) {
+  const now = Date.now();
+  if (now - lastCapiAlert < 5 * 60 * 1000) return;
+  lastCapiAlert = now;
+  const motivo = !capi ? 'sem resposta do CAPI'
+    : capi.skipped ? ('skipped: ' + capi.skipped + ' (META_CAPI_TOKEN vazio?)')
+    : capi.error ? ('erro: ' + capi.error)
+    : ('HTTP ' + (capi.status || '?') + ': ' + String(capi.body || '').slice(0, 180));
+  discord.notifyCapiFalhou({ gateway: 'Yampi', motivo }).catch(() => {});
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
   const TOKEN = (process.env.YAMPI_TOKEN || process.env.CAKTO_SECRET || '').trim();
@@ -113,6 +126,7 @@ module.exports = async (req, res) => {
         eventSourceUrl: 'https://eternizamemori.site/',
       });
       console.log('[yampi-webhook] capi', JSON.stringify(capiResult));
+      if (!capiResult || !capiResult.ok) alertCapiFailOnce(capiResult); // 🚨 Purchase não foi pro Meta
       // Discord: pinga o celular na hora que a venda cai
       discordResult = await discord.notifyVendaAprovada({ valor, nome: name, phone: phoneRaw, email, gateway: 'Yampi', orderId });
 
